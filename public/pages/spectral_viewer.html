@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1" name="viewport"/>
+  <title>
+   Interactive Spectra Viewer
+  </title>
+  <link rel="icon" href="../assets/img/favicon.png" />
+  <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-AMS-MML_SVG"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css"/>
+  <link rel="stylesheet" href="../assets/css/spectral_viewer.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
+  <script defer="" src="https://cdn.plot.ly/plotly-2.35.2.min.js">
+  </script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js">
+  </script>
+ </head>
+ <body>
+  <div class="app">
+   <div class="controls">
+    <div class="controls-header">
+     <div class="controls-title">
+      <h1>
+       Interactive Spectra Viewer
+      </h1>
+      
+     </div>
+     <div style="display: flex; gap: 12px; align-items: center;">
+      <a href="../index.html" class="back-link">
+       ← Back to Home
+      </a>
+      <div class="status-line" id="statusLine">
+       No spectra loaded
+      </div>
+     </div>
+    </div>
+    <div class="controls-grid">
+     <section class="control-card" data-expandable="true">
+      <div class="card-title">
+       <h2>
+        Load Data
+       </h2>
+       <div class="row">
+        <button class="ghost" id="btnClear">
+         Clear
+        </button>
+       </div>
+      </div>
+      <p class="small">
+       Select one or more <strong>CSV</strong>, <strong>TXT</strong>, <strong>ASCII</strong>, <strong>FITS Binary Table</strong>, <strong>ZIP</strong> files from disk.
+      </p>
+      <input accept=".csv,.txt,.ascii,.dat,.fits,.fit,.zip" id="fileInput" multiple="" type="file"/>
+      <p class="small">
+       Accepted separators: <strong>","</strong>, <strong>";"</strong>, <strong>":"</strong>, <strong>"\t"</strong>, <strong>"/s+/"</strong>. FITS Binary tables with multiple tables are accepted.
+      </p>
+      <button class="primary" id="btnViewColumns" style="width: 100%; margin-top: 8px;">View All Columns</button>
+     </section>
+     <section class="control-card" id="cardSpectra" data-expandable="true">
+      <div class="card-title">
+       <h2>
+        Spectra
+       </h2>
+       <div class="row">
+        <button class="ghost" id="btnAll">
+         All
+        </button>
+        <button class="ghost" id="btnNone">
+         None
+        </button>
+       </div>
+      </div>
+      <input id="search" placeholder="Filter by name..."/>
+      <div id="spectraList">
+      </div>
+     </section>
+     <section class="control-card" id="cardPlot" data-expandable="true">
+      <h2>
+       Plot
+      </h2>
+      <div style="margin-bottom: 1px;">
+       <p class="small" style="margin-bottom: 6px;">Labels <span style="color: var(--muted); font-style: italic;">(text or $$, but not both)</span></p>
+       <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+        <label style="min-width: 20px; font-size: 13px; font-weight: 500;">X</label>
+        <input id="xAxisLabel" type="text" placeholder="X-axis label (LaTeX supported)" style="flex: 1;" value="$\lambda \; [\text{Å}]$"/>
+       </div>
+       <div style="display: flex; align-items: center; gap: 8px;">
+        <label style="min-width: 20px; font-size: 13px; font-weight: 500;">Y</label>
+        <input id="yAxisLabel" type="text" placeholder="Y-axis label (LaTeX supported)" style="flex: 1;" value="$F_\lambda \; [\text{erg s}^{-1} \text{ cm}^{-2} \text{ Å}^{-1}]$"/>
+       </div>
+      </div>
+      <label class="pill" style="margin-bottom: 5px;">
+       <input checked="" id="toggleHover" type="checkbox"/>
+       Show Hover
+      </label>
+      <button id="btnToggleCustomPlot" class="ghost" style="width: 100%; margin-bottom: 8px; padding: 6px 12px; display: flex; align-items: center; justify-content: space-between;">
+       <span style="font-weight: 600; font-size: 13px;">Add Custom Plot</span>
+       <span id="toggleCustomPlotIcon" style="font-size: 18px; line-height: 1;">▼</span>
+      </button>
+      <div id="customPlotForm" style="display: none; border: 1px solid var(--border); border-radius: 8px; padding: 10px; background: var(--fg); margin-bottom: 8px;">
+       <div style="margin-bottom: 6px;">
+        <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 2px;">Spectrum/Table</label>
+        <select id="spectrumSelect" style="width: 100%; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--fg); font-size: 13px;">
+         <option value="">Select a spectrum...</option>
+        </select>
+       </div>
+       <div style="display: flex; gap: 6px; align-items: stretch; margin-bottom: 6px; width: 100%;">
+        <select id="plotTypeSelect" style="flex: 1; min-width: 0; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--fg); font-size: 13px;">
+         <option value="line-solid">Line (solid)</option>
+         <option value="line-dashed">Line (dashed)</option>
+         <option value="error-fill">Error band (fill)</option>
+        </select>
+       </div>
+       <div style="display: flex; gap: 8px; margin-bottom: 6px;">
+        <div style="flex: 1;">
+         <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 2px;">X Column</label>
+         <select id="xColumnSelect" style="width: 100%; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--fg); font-size: 13px;">
+          <option value="">Select X column...</option>
+         </select>
+        </div>
+        <div style="flex: 1;">
+         <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 2px;">Y Column</label>
+         <select id="yColumnSelect" style="width: 100%; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--fg); font-size: 13px;">
+          <option value="">Select Y column...</option>
+         </select>
+        </div>
+       </div>
+       <div id="errorColumnRow" style="display: none; margin-bottom: 6px;">
+        <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 2px;">Error Column</label>
+        <select id="errorColumnSelect" style="width: 100%; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--fg); font-size: 13px;">
+         <option value="">Select error column...</option>
+        </select>
+       </div>
+       <div style="margin-bottom: 6px;">
+        <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 2px;">Legend Label</label>
+        <input id="labelInput" type="text" placeholder="e.g. Star A" style="width: 100%; padding: 4px 8px; font-size: 13px;"/>
+       </div>
+       <button id="btnAddPlotType" class="primary" style="padding: 6px 12px; white-space: nowrap; width: 100%;">Add Plot</button>
+      </div>
+      <div id="activePlotTypes">
+       <!-- Active plot types will be listed here -->
+      </div>
+     </section>
+     <section class="control-card" id="cardLines">
+      <div style="font-size:9px; color:var(--muted); text-align:center; margin-bottom:-5px;margin-top:-10px">
+       💡 Click <strong>+</strong> on plot toolbar to add lines
+      </div>
+      <div class="card-title">
+       <h2>
+        Selected lines
+       </h2>
+       <button class="ghost" id="btnClearLines">
+        Clear
+       </button>
+      </div>
+      <div class="lines-list empty" id="selectedLinesList">
+       No lines yet.
+      </div>
+      <button class="primary" disabled="" id="btnDownloadLines">
+       Download .txt
+      </button>
+      <!-- NEW: small hint below the button -->
+      <div class="tiny-note" id="linesPrecisionHint">
+       Saved with 4 decimals
+      </div>
+     </section>
+     <section class="control-card" data-expandable="true">
+      <h2>
+       Rendering
+      </h2>
+      <div class="chips">
+       <label class="pill">
+        Max points
+        <input id="maxPoints" min="500" step="500" type="number" value="4000"/>
+       </label>
+       <label class="pill">
+        Line width
+        <input id="lineWidth" max="6" min="1" type="number" value="2"/>
+       </label>
+      </div>
+      <p class="small">
+       Downsampling uses Largest-Triangle-Three-Buckets per zoom window.
+      </p>
+     </section>
+    </div>
+   </div>
+   <div class="plot-area" id="plotWrap">
+    <div id="graph">
+    </div>
+   </div>
+  </div>
+                <div style="width: 100%; display: flex; justify-content: flex-end; margin-top: -10px; margin-bottom: 0px;">
+                    <div style="max-width: 700px; width: 100%; display: flex; justify-content: flex-end; align-items: center; gap: 6px; padding-right: 32px;">
+                        <span style="font-size: 14px; color: var(--muted);">Questions, suggestions or report problems?</span>
+                        <a href="mailto:baltasarluco@uc.cl" style="font-size: 14px; color: var(--accent); font-weight: 500; transition: color 0.2s; text-decoration: none;">baltasarluco@uc.cl</a>
+                    </div>
+                </div>
+                <div style="height: 10px;"></div>
+    <style>
+        a[href^="mailto:"]:hover {
+            color: #2bb673;
+        }
+    </style>
+
+  <script src="../assets/js/spectral_viewer.min.js"></script>
+ </body>
+</html>

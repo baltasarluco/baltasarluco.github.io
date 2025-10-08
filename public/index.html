@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Baltasar Luco — Personal Site</title>
+  <link rel="icon" href="assets/img/favicon.png" />
+  <link rel="stylesheet" href="assets/css/styles.min.css" />
+  
+  <!-- Preload critical above-the-fold images -->
+  <link rel="preload" as="image" type="image/webp" href="assets/img/Retrato.webp">
+  <link rel="preload" as="image" href="assets/img/Retrato.JPG">
+  <link rel="preload" as="image" type="image/webp" href="assets/img/Cooming_zoom.webp">
+  <link rel="preload" as="image" href="assets/img/Cooming_zoom.jpg">
+</head>
+<body>
+  <header class="header">
+    <div class="container header__inner">
+      <a href="#" id="brand-trigger" class="brand">Baltasar Luco Korn</a>
+      <button class="nav-toggle" aria-expanded="false" aria-controls="site-nav">
+        <span class="nav-toggle__bar"></span>
+        <span class="nav-toggle__bar"></span>
+        <span class="nav-toggle__bar"></span>
+      </button>
+      <nav class="nav" id="site-nav" data-nav>
+        <a href="#home" class="nav__link" data-navto="home">Home</a>
+        <a href="#research" class="nav__link" data-navto="research">Research</a>
+        <a href="#publications" class="nav__link" data-navto="publications">Publications</a>
+        <a href="#about" class="nav__link" data-navto="about">About Me</a>
+        <a href="pages/spectral_viewer.html" class="nav__link">Interactive Spectra Viewer</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main container">
+    <section class="section" data-section="home" aria-labelledby="home-title">
+      <div class="hero card">
+        <div class="hero__content">
+          <h1 id="home-title" class="title">Hi, I’m <span class="accent">Baltasar</span></h1>
+          <p class="lead">
+            I’m currently pursuing a Master’s degree in Astrophysics at Pontificia Universidad Católica de Chile. 
+            My research focuses on resolved and unresolved stellar populations, with a particular emphasis on the 
+            Surface Brightness Fluctuation (SBF) technique. Recently, I’ve begun studying comets, motivated by the 
+            arrival of the interstellar object 3I/ATLAS. Beyond that, my interests include extragalactic astrophysics 
+            and cosmology.
+          </p>
+          <div class="actions">
+            <a class="btn btn--accent" data-navto="research" href="#research">See my research</a>
+            <a class="btn btn--ghost" data-navto="publications" href="#publications">Read publications</a>
+            <a class="btn btn--ghost"
+            href="assets/CV/CV.pdf"
+            download="CV.pdf"
+            aria-label="Download CV (PDF)">
+            <!-- tiny download icon -->
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right:8px">
+              <path d="M12 3a1 1 0 0 1 1 1v8.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.42L11 12.59V4a1 1 0 0 1 1-1zM5 19a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H6a1 1 0 0 1-1-1z"/>
+            </svg>
+            CV
+          </a>
+          </div>
+        </div>
+        <div class="hero__art">
+          <picture>
+            <source srcset="assets/img/Retrato.webp" type="image/webp">
+            <img
+              src="assets/img/Retrato.JPG"
+              alt="Baltasar Luco"
+              class="hero-img"
+              loading="lazy"
+              decoding="async"
+            />
+          </picture>
+        </div>
+      </div>
+
+      <div class="grid two">
+        <article class="card soft">
+          <h2 class="subtitle">In this web page you’ll find:</h2>
+        <p class="lead">What I work on, the papers I’ve contributed to, a bit about me, and a handy CSV Spectra Viewer for quick, in-browser plots of large spectra.</p>
+          
+        </article>
+        
+        <article class="card">
+  <h2 class="subtitle">Contact</h2>
+  <ul class="contact">
+    <!-- Row 1: full width -->
+    <li class="full">
+      <a class="contact__link">
+        <!-- Mail icon -->
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M20 4H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 4-8 5L4 8V6l8 5 8-5v2Z"/>
+        </svg>
+        Email: baltasarluco@uc.cl
+      </a>
+      </li>
+      <!-- Row 2: LinkedIn (left) -->
+      <li>
+        <a class="contact__link" href="https://www.linkedin.com/in/jose-baltasar-luco-korn" target="_blank" rel="noopener">
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M4.98 3.5a2.5 2.5 0 1 0 0 5.001 2.5 2.5 0 0 0 0-5ZM3 9h4v12H3zM14.5 9c-2.08 0-3.5 1.14-3.5 3.02V21h4v-6.07c0-1.08.75-1.78 1.82-1.78 1.04 0 1.68.7 1.68 1.78V21h4v-6.93C22.5 10.75 20.86 9 18.5 9c-1.4 0-2.49.62-3 1.44V9h-1z"/>
+          </svg>
+          LinkedIn
+        </a>
+      </li>
+        <!-- Row 2: GitHub (right) -->
+        <li>
+          <a class="contact__link" href="https://github.com/baltasarluco" target="_blank" rel="noopener">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 .5A11.5 11.5 0 0 0 .5 12c0 5.08 3.29 9.38 7.86 10.9.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.34-1.3-1.7-1.3-1.7-1.06-.72.08-.71.08-.71 1.18.08 1.8 1.21 1.8 1.21 1.04 1.78 2.72 1.27 3.38.97.11-.77.41-1.27.74-1.56-2.55-.3-5.23-1.28-5.23-5.72 0-1.26.45-2.28 1.2-3.09-.12-.3-.52-1.52.12-3.17 0 0 .98-.31 3.2 1.18a11.1 11.1 0 0 1 5.82 0c2.21-1.49 3.2-1.18 3.2-1.18.64 1.65.24 2.87.12 3.17.75.81 1.2 1.83 1.2 3.09 0 4.45-2.68 5.41-5.24 5.71.42.36.8 1.07.8 2.17v3.22c0 .31.21.66.8.55A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5z"/>
+            </svg>
+            GitHub
+          </a>
+        </li>
+      </ul>
+      
+    </article>
+
+ <!-- Second page ------------------------------------------->
+
+      </div>
+    </section>
+
+    <section class="section is-hidden" data-section="research" aria-labelledby="research-title">
+      <h2 id="research-title" class="subtitle">Research</h2>
+      
+      <div class="grid one research-list">
+        <article class="card card--split" data-reveal id="proj-gcvr">
+          <div class="card__body">
+            <h3>Galactic Center VR</h3>
+            <p>
+              Under the guidance of <strong>Prof. Jorge Cuadra</strong> and
+              <strong>postdoc Christopher Russell</strong>, I helped develop a public
+              virtual-reality app that lets users explore and “fly through” the
+              <strong>Milky Way’s Galactic Center</strong>. Built with <strong>Unity</strong>
+              and <strong>C#</strong>, the experience combines <strong>supercomputer
+              simulations</strong> with <strong>Chandra X-ray</strong> observations.
+              My contributions focused on user-facing utilities—locomotion, parameter
+              controls, and in-app menus—to make the app intuitive and accessible.
+            </p>
+
+            <div class="card__actions">
+              <a class="btn btn--ghost" href="https://store.steampowered.com/app/1240350/Galactic_Center_VR/" target="_blank" rel="noopener">
+                Check the App
+              </a>
+
+              <ul class="chips">
+                <li class="chip">Unity</li>
+                <li class="chip">C#</li>
+                <li class="chip">Virtual Reality</li>
+              </ul>
+            </div>
+          </div>
+
+          <figure class="card__media">
+            <!-- ⬇️ replace src with your actual image -->
+            <picture>
+              <source srcset="assets/img/VR.webp" type="image/webp">
+              <img src="assets/img/VR.jpg"
+                   alt="VR exploration near the Milky Way’s Galactic Center showing hot gas, density and stellar orbits"
+                   loading="lazy" decoding="async">
+            </picture>
+          </figure>
+        </article>
+
+        <article class="card card--weave" data-reveal id="proj-sbf">
+  <!-- ROW 1: text (left) | image (right) -->
+  <div class="row row-a">
+    <div class="text text--a">
+      <h3>Surface Brightness Fluctuations (SBF)</h3>
+      <p>
+        Since <strong>2021</strong> I’ve been part of <strong>Prof. Thomas Puzia’s</strong> group,
+        working with the <em>Surface Brightness Fluctuations</em> method. Rather than treating SBF
+        solely as a distance indicator, my work explores its value for the study of
+        <strong>stellar populations</strong>.
+      </p>
+      <p>
+        I began by quantifying how SBF absolute magnitudes vary with <strong>age</strong> and
+        <strong>metallicity</strong> across multiple <strong>HST</strong> filters using
+        <strong>Milky Way globular clusters</strong>. This became my <strong>bachelor’s thesis</strong>;
+        I’m currently preparing the manuscript for submission.
+      </p>
+    </div>
+
+    <!-- IMAGE (right) -->
+    <figure class="figure figure--b">
+      <a class="figure__link" href="assets/pdfs/Met_606.pdf"
+         target="_blank" rel="noopener"
+         aria-label="Open project PDF: Met_606.pdf">
+        <div class="figure__frame">
+          <picture>
+            <source srcset="assets/img/Met_606.webp" type="image/webp">
+            <img class="figure__img"
+                 src="assets/img/Met_606.jpg"
+                 alt="Preview of SBF synthetic-population grids">
+          </picture>
+        </div>
+      </a>
+    </figure>
+  </div>
+
+  <!-- ROW 2: image (left) | text (right) -->
+  <div class="row row-b">
+    <!-- IMAGE (left) -->
+    <figure class="figure figure--a">
+      <a class="figure__link" href="assets/pdfs/F606-F814_Met.pdf"
+         target="_blank" rel="noopener"
+         aria-label="Open thesis PDF: F606-F814_Met.pdf">
+        <div class="figure__frame">
+          <picture>
+            <source srcset="assets/img/F606-F814_Met.webp" type="image/webp">
+            <img class="figure__img"
+                 src="assets/img/F606-F814_Met.jpg"
+                 alt="Preview of thesis PDF: F606–F814 metallicity relation">
+          </picture>
+        </div>
+      </a>
+    </figure>
+
+    <div class="text text--b">
+      <p>
+        For my <strong>master’s thesis</strong> I model SBF <strong>magnitudes</strong> and
+        <strong>colors</strong> from <strong>synthetic stellar populations</strong>—from simple to
+        composite—expanding the filter set and adding <strong>narrow-band</strong> passbands.
+        The goal is to link population parameters to SBF observables and map key degeneracies.
+      </p>
+
+      <ul class="chips">
+        <li class="chip">SBF</li>
+        <li class="chip">Stellar Populations</li>
+        <li class="chip">HST</li>
+        <li class="chip">Globular Clusters</li>
+        <li class="chip">Broad and Narrow Band Imaging</li>
+      </ul>
+    </div>
+  </div>
+</article>
+
+
+          <article class="card card--split" data-reveal id="proj-3i">
+            <div class="card__body">
+              <h3>3I/ATLAS</h3>
+              <p>
+                Since <strong>July 2025</strong> our group has been studying the interstellar object
+                <strong>3I/ATLAS</strong>—the third known interstellar visitor to pass through the
+                <strong>Solar System</strong>. We have collected observations from multiple facilities,
+                including <strong>SOAR</strong> and the <strong>VLT</strong>.
+              </p>
+              <p>
+                I’m currently analyzing <strong>spectroscopy</strong> to investigate its composition and
+                temporal evolution (e.g., gas and dust behavior). <em>Stay tuned—results are coming soon.</em>
+              </p>
+
+              <div class="card__actions">
+                <ul class="chips">
+                  <li class="chip">3I/ATLAS</li>
+                  <li class="chip">Interstellar Object</li>
+                  <li class="chip">Spectroscopy</li>
+                  <li class="chip">SOAR</li>
+                  <li class="chip">VLT</li>
+                </ul>
+              </div>
+            </div>
+
+            <figure class="card__media">
+              <!-- ⬇️ replace with your actual image path (keeps native aspect ratio) -->
+              <picture>
+                <source srcset="assets/img/Cooming_zoom.webp" type="image/webp">
+                <img
+                  src="assets/img/Cooming_zoom.jpg"
+                  alt="Cooming zoom"
+                  loading="lazy"
+                  decoding="async"
+                >
+              </picture>
+            </figure>
+          </article>
+      </div>
+    </section>
+
+    <!-- Third Page-->
+
+
+
+    <section class="section is-hidden" data-section="publications" aria-labelledby="pubs-title">
+      <h2 id="pubs-title" class="subtitle">Publications</h2>
+      
+      <!-- Publication cards in single column for better readability -->
+      <div class="grid one">
+        
+        <!-- Publication 1 - VLT (August 2025) -->
+        <article class="card pub-card">
+          <div class="pub-header">
+            <h3 class="pub-title">VLT observations of interstellar comet 3I/ATLAS II. From quiescence to glow: Dramatic rise of Ni I emission and incipient CN outgassing at large heliocentric distances</h3>
+            <p class="pub-authors">
+              Rahatgaonkar, Rohan; Carvajal, Juan Pablo; Puzia, Thomas H.; <strong>Luco, Baltasar</strong>; Jehin, Emmanuel; Hutsemékers, Damien; Opitom, Cyrielle; Manfroid, Jean; Marsset, Michaël; Yang, Bin; et al.
+            </p>
+            <p class="pub-meta">
+              <span class="pub-journal">arXiv e-prints, arXiv:2508.18382</span>
+              <span class="pub-separator">·</span>
+              <span class="pub-year">August 2025</span>
+              <span class="pub-separator">·</span>
+              <span class="pub-status">Submitted to ApJL</span>
+            </p>
+          </div>
+          
+          <p class="pub-description">
+            We report VLT spectroscopy of the interstellar comet 3I/ATLAS (C/2025 N1) from r<sub>h</sub> ≃ 4.4 to 2.85 au using X-shooter (300-550 nm, R ≃ 3000) and UVES (optical, R ≃ 35k-80k). The coma is dust-dominated with a fairly constant red optical continuum slope (~21-22%/1000Å). We report detection of CN emission and also detect numerous Ni I lines while Fe I remains undetected, potentially implying efficiently released gas-phase Ni. We observe a steep heliocentric-distance scaling for the production rates Q(Ni) ∝ r<sub>h</sub><sup>-8.43±0.79</sup> and for Q(CN) ∝ r<sub>h</sub><sup>-9.38±1.2</sup>...
+          </p>
+          
+          <div class="pub-links">
+            <a class="btn btn--ghost btn--sm" href="https://ui.adsabs.harvard.edu/abs/2025arXiv250818382R/abstract" target="_blank" rel="noopener">
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              </svg>
+              ADS
+            </a>
+          </div>
+        </article>
+
+        <!-- Publication 2 - SOAR (September 2025) -->
+        <article class="card pub-card">
+          <div class="pub-header">
+            <h3 class="pub-title">Spectral Characteristics of Interstellar Object 3I/ATLAS from SOAR Observations</h3>
+            <p class="pub-authors">
+              Puzia, Thomas H.; Rahatgaonkar, Rohan; Carvajal, Juan Pablo; Nayak, Prasanta K.; <strong>Luco, Baltasar</strong>
+            </p>
+            <p class="pub-meta">
+              <span class="pub-journal">The Astrophysical Journal, Volume 990, L27</span>
+              <span class="pub-separator">·</span>
+              <span class="pub-year">September 2025</span>
+              <span class="pub-separator">·</span>
+              <span class="pub-status">Published</span>
+            </p>
+          </div>
+          
+          <p class="pub-description">
+            Interstellar objects (ISOs) provide unique insights into the building blocks and conditions of extrasolar planetary systems. The newly discovered object, 3I/ATLAS (C/2025 N1), represents the third known ISO after 1I/'Oumuamua and 2I/Borisov. We present initial spectroscopic characterizations of 3I using observations from the Goodman High Throughput Spectrograph on the 4.1 m SOAR Telescope in Chile during the night of July 3. The reflectance spectrum of 3I, covering 3700–7000 Å, reveals a red continuum, comparable to extreme trans-Neptunian objects, with a weak UV-optical turnover indicative of complex carbonaceous and irradiated organics...
+          </p>
+          
+          <div class="pub-links">
+            <a class="btn btn--ghost btn--sm" href="https://ui.adsabs.harvard.edu/abs/2025ApJ...990L..27P/abstract" target="_blank" rel="noopener">
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              </svg>
+              ADS
+            </a>
+          </div>
+        </article>
+
+        
+      </div>
+    </section>
+
+    <section class="section is-hidden" data-section="about" aria-labelledby="about-title">
+      <h2 id="about-title" class="subtitle">About Me</h2>
+      <!-- Who I am - Full width card -->
+      <div class="grid one">
+        <article class="card">
+          <picture>
+            <source srcset="assets/img/UClogo.webp" type="image/webp">
+            <img src="assets/img/UClogo.jpg" alt="UClogo" loading="lazy" decoding="async" style="float: right; width: 200px; height: auto; margin: 0 0 16px 16px; border-radius: 8px;">
+          </picture>
+          <h3 style="margin-top: 0;">Who I am</h3>
+          <p>
+            Hello! I am <strong>Jose Baltasar Luco Korn</strong>, though I prefer to go by <strong>Baltasar</strong>. 
+            I am a Chilean astronomy graduate student with a deep passion for understanding the universe through stellar populations and its chemical evolution.
+          </p>
+          <p>
+            I hold two bachelor's degrees one in <strong>Astrophysics</strong> and another in <strong>Mathematics</strong> from 
+            <strong>Pontificia Universidad Católica de Chile</strong>, where I developed a strong foundation in both 
+            theoretical and observational astronomy. Since 2025, I have been pursuing my <strong>Master's degree 
+            in Astrophysics</strong> at the same institution, deepening my expertise in stellar population synthesis and 
+            extragalactic research.
+          </p>
+          <p>
+            My fascination with astronomy began in childhood. Over the years, this curiosity has evolved into a focused research interest in <strong>stellar 
+            populations</strong>—understanding how the collective properties of stars reveal the formation histories galaxies. I am particularly drawn to using techniques like <strong>Surface Brightness 
+            Fluctuations (SBF)</strong> to probe stellar ages, metallicities, and distances across cosmic time, from resolved to unresolved stellar populations, in simple and composite populations.
+          </p>
+          <p>
+            Beyond stellar populations, I maintain broad interests across astrophysics, including <strong>cosmology</strong>, 
+            <strong>extragalactic astronomy</strong>, and the study of <strong>interstellar objects</strong>. I've had the 
+            privilege of contributing to groundbreaking observations of 3I/ATLAS, the third known interstellar visitor to 
+            our Solar System, combining spectroscopy with theoretical modeling to understand its composition and origin.
+          </p>
+          <p>
+            When I'm not working with data, I enjoy exploring new technologies for data visualization, 
+            building tools for the astronomy community, and staying curious about the intersection of mathematics, physics, 
+            and computation in modern astrophysics.
+          </p>
+        </article>
+
+        <article class="card">
+          <picture>
+            <source srcset="assets/img/Foster.webp" type="image/webp">
+            <img src="assets/img/Foster.jpg" alt="Manuel Foster Observatory" class="foster-img" loading="lazy" decoding="async" style="width: 100%; height: auto; margin: 0 0 24px 0; border-radius: 8px;">
+          </picture>
+          
+          <h3 style="margin-top: 0;">Work Experience</h3>
+          <p>
+            Besides astronomy research, I have gained diverse experience in science communication, teaching, and even international work. 
+            I am passionate about sharing knowledge and connecting with communities through education and outreach.
+          </p>
+          
+          <div style="margin-top: 16px;">
+            <h4 style="margin: 12px 0 4px 0; font-size: 16px; font-weight: 600;">Professor's Assistant</h4>
+            <p style="margin: 4px 0; color: var(--muted); font-size: 14px;">
+              <em>Pontificia Universidad Católica de Chile</em>
+            </p>
+            <ul class="list" style="margin-top: 8px;">
+              <li><strong>Experimental Astrophysics</strong> (Aug - Dec 2024) - Prof. Jorge González</li>
+              <li><strong>Experimental Astrophysics</strong> (Aug - Dec 2022) - Prof. Felipe Barrientos</li>
+              <li><strong>Astronomy</strong> (Mar - Dec 2021, 2 semesters) - Prof. Thomas Puzia, university-wide course open to all majors</li>
+            </ul>
+          </div>
+          
+          <div style="margin-top: 16px;">
+            <h4 style="margin: 12px 0 4px 0; font-size: 16px; font-weight: 600;">Outreach and Diffusion Assistant</h4>
+            <p style="margin: 4px 0; color: var(--muted); font-size: 14px;">
+              <em>Astrophysics Institute, Pontificia Universidad Católica de Chile</em> • Apr 2022 - Jan 2023
+            </p>
+            <p style="margin-top: 8px;">
+              Refined skills in science communication through multimedia editing, social media management, and live streaming. 
+              Served as Monitor Coordinator for the public opening of the historic Manuel Foster Observatory (a National Monument), 
+              promoting astronomy education and preserving astronomical heritage.
+            </p>
+          </div>
+          
+          <div style="margin-top: 16px;">
+            <h4 style="margin: 12px 0 4px 0; font-size: 16px; font-weight: 600;">Outreach and Diffusion Assistant</h4>
+            <p style="margin: 4px 0; color: var(--muted); font-size: 14px;">
+              <em>Center of Excellence in Astrophysics and Related Technologies (CATA)</em> • Apr - Dec 2022
+            </p>
+            <p style="margin-top: 8px;">
+              Engaged in science communication initiatives, multimedia editing, and social media management. Coordinated and 
+              executed diverse educational outreach activities across various schools and provinces within Santiago, promoting 
+              scientific literacy and community engagement with astrophysics.
+            </p>
+          </div>
+          <p style="margin: 4px 0; color: var(--muted); font-size: 14px;">
+              <em>Center of Excellence in Astrophysics and Related Technologies (CATA)</em> • Apr - Dec 2022
+            </p>
+
+            <div style="margin-top: 16px;">
+            <h4 style="margin: 12px 0 4px 0; font-size: 16px; font-weight: 600;">Outreach</h4>
+         
+            <p style="margin-top: 8px;">
+              Beyond my formal roles, I am still participating in various outreach activities in my free time. The outreach activities I have been involved so far include:
+            </p>
+          </div>
+           <ul class="chips">
+            <li class="chip">Tour Guide</li>
+            <li class="chip">Livestream Coverage</li>
+            <li class="chip">Social Media</li>
+            <li class="chip">Children's Workshops</li>
+            <li class="chip">School Talks</li>
+            <li class="chip">Public Lectures</li>
+          </ul>
+          
+          <picture>
+            <source srcset="assets/img/Talleres.webp" type="image/webp">
+            <img src="assets/img/Talleres.jpg" alt="Outreach Workshop" class="talleres-img" loading="lazy" decoding="async" style="width: 100%; height: auto; margin: 24px 0; border-radius: 8px;">
+          </picture>
+          
+          <div style="margin-top: 16px;">
+            <h4 style="margin: 12px 0 4px 0; font-size: 16px; font-weight: 600;">Ski Instructor</h4>
+            <p style="margin: 4px 0; color: var(--muted); font-size: 14px;">
+              <em>Vail Resorts</em> • Dec 2019 - Mar 2020 • Breckenridge, CO, USA
+            </p>
+            <p style="margin-top: 8px;">
+              Worked as a ski instructor under the J1 Visa program, specializing in teaching children aged 3 to 6 years old. 
+              Enhanced teamwork skills, fostered social relationships, gained experience working with children, and embodied 
+              a strong sense of responsibility in an international setting.
+            </p>
+          </div>
+        </article>
+
+        <!-- Hobbies Card -->
+        <article class="card">
+          <div style="display: flex; gap: 24px; align-items: flex-start;">
+            <!-- Left side: All text content -->
+            <div style="flex: 1;">
+              <div style="margin-top: 40px;">
+                <h3 style="margin-top: 0;">Beyond Research</h3>
+                <p>
+                  Outside of astronomy, I find joy and creativity in hands-on pursuits that blend science, art, and patience.
+                </p>
+                
+                <div style="margin-top: 16px;">
+                  <h4 style="margin: 12px 0 4px 0; font-size: 16px; font-weight: 600;">📷 Photography (Digital & Analog)</h4>
+                  <p style="margin-top: 8px;">
+                    Photography allows me to capture fleeting moments and see the world through a different lens—both literally and 
+                    figuratively. I enjoy working with both <strong>digital</strong> and <strong>analog (film)</strong> photography, 
+                    appreciating the immediacy and flexibility of digital alongside the deliberate, tactile process of shooting film.
+                  </p>
+                  <p style="margin-top: 8px;">
+                    I take photos of the night sky, everyday life, and landscapes. I enjoy the entire process—from getting the 
+                    frame shot to editing—finding satisfaction in capturing moments and bringing out their essence through 
+                    post-processing.
+                  </p>
+                </div>
+              </div>
+              
+              <div style="margin-top: 175px;">
+                <h4 style="margin: 12px 0 4px 0; font-size: 16px; font-weight: 600;">🍺 Home Brewing Beer</h4>
+                <p style="margin-top: 8px;">
+                  I enjoy making beer from scratch—preparing the ingredients, brewing, bottling, and finally trying the results. 
+                  I like to test different types of recipes and put my own touch on them, while keeping detailed records to make 
+                  my brews reproducible.
+                </p>
+                <p style="margin-top: 8px; margin-bottom: 0;">
+                  From all the different beer styles, I'll highlight <strong>APA (American Pale Ale)</strong> as my favorite.
+                </p>
+              </div>
+            </div>
+            
+            <!-- Right side: Video stacked on top of brew image -->
+            <div style="flex-shrink: 0; display: flex; flex-direction: column; gap: 16px;">
+              <video id="photoVideo" autoplay muted playsinline style="width: 280px; height: auto; border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,.8), 0 2px 8px rgba(0,0,0,.7), inset 0 0 0 1px rgba(0,0,0,.5);">
+                <source src="assets/video/TimeLapse.mp4" type="video/mp4">
+                <source src="assets/video/TimeLapse.mov" type="video/quicktime">
+                Your browser does not support the video tag.
+              </video>
+              <picture>
+                <source srcset="assets/img/brew.webp" type="image/webp">
+                <img src="assets/img/brew.jpg" alt="Home Brewing" loading="lazy" decoding="async" style="width: 280px; height: auto; object-fit: cover; border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,.8), 0 2px 8px rgba(0,0,0,.7), inset 0 0 0 1px rgba(0,0,0,.5);">
+              </picture>
+            </div>
+          </div>
+        </article>
+
+        <!-- Favorite Photos Section -->
+        <article class="card">
+          <h3 style="margin-top: 0;">Favorite Photos</h3>
+          <p style="margin-bottom: 16px;">
+            A selection of moments captured through my lens—landscapes, travels, and everyday beauty.
+          </p>
+          
+          <div class="photo-collage-creative">
+            <!-- Tall portrait photo - spans 1 column and 2 rows -->
+            <div class="photo-item photo-tall">
+              <picture>
+                <source srcset="assets/img/DSC_0037.webp" type="image/webp">
+                <img src="assets/img/DSC_0037.jpg" alt="Photo 1" loading="lazy" decoding="async">
+              </picture>
+            </div>
+            
+            <!-- Extra large photo - spans 2 columns and 2 rows -->
+            <div class="photo-item photo-xlarge">
+              <picture>
+                <source srcset="assets/img/DSC_0825.webp" type="image/webp">
+                <img src="assets/img/DSC_0825.jpg" alt="Photo 2" loading="lazy" decoding="async">
+              </picture>
+            </div>
+            
+            <!-- Tall portrait photo - spans 2 rows -->
+            <div class="photo-item photo-tall">
+              <picture>
+                <source srcset="assets/img/01980019.webp" type="image/webp">
+                <img src="assets/img/01980019.JPG" alt="Photo 3" loading="lazy" decoding="async">
+              </picture>
+            </div>
+            
+            <!-- Wide landscape photo - spans 2 columns -->
+            <div class="photo-item photo-wide">
+              <picture>
+                <source srcset="assets/img/DSC_0118.webp" type="image/webp">
+                <img src="assets/img/DSC_0118.jpg" alt="Photo 4" loading="lazy" decoding="async">
+              </picture>
+            </div>
+            
+            <!-- Regular photo -->
+            <div class="photo-item">
+              <picture>
+                <source srcset="assets/img/04350034.webp" type="image/webp">
+                <img src="assets/img/04350034.JPG" alt="Photo 5" loading="lazy" decoding="async">
+              </picture>
+            </div>
+            
+            <!-- Tall photo - spans 2 rows to fill empty space -->
+            <div class="photo-item photo-tall">
+              <picture>
+                <source srcset="assets/img/DSC_0192.webp" type="image/webp">
+                <img src="assets/img/DSC_0192.jpg" alt="Photo 6" loading="lazy" decoding="async">
+              </picture>
+            </div>
+            
+            <div class="photo-item">
+              <picture>
+                <source srcset="assets/img/DSC_0213.webp" type="image/webp">
+                <img src="assets/img/DSC_0213.jpg" alt="Photo 9" loading="lazy" decoding="async">
+              </picture>
+            </div>
+            
+            <!-- Tall photo -->
+            <div class="photo-item photo-tall">
+              <picture>
+                <source srcset="assets/img/DSC_0646.webp" type="image/webp">
+                <img src="assets/img/DSC_0646.jpg" alt="Photo 7" loading="lazy" decoding="async">
+              </picture>
+            </div>
+            
+            <!-- Regular photos -->
+            <div class="photo-item">
+              <picture>
+                <source srcset="assets/img/DSC_0314.webp" type="image/webp">
+                <img src="assets/img/DSC_0314.jpg" alt="Photo 8" loading="lazy" decoding="async">
+              </picture>
+            </div>
+            
+            <div class="photo-item photo-tall">
+              <picture>
+                <source srcset="assets/img/DSC_0096.webp" type="image/webp">
+                <img src="assets/img/DSC_0096.jpg" alt="Photo 11" loading="lazy" decoding="async">
+              </picture>
+            </div>
+            
+            <!-- Extra large photo - spans 2 columns and 2 rows -->
+            <div class="photo-item photo-xlarge">
+              <picture>
+                <source srcset="assets/img/DSC_0260.webp" type="image/webp">
+                <img src="assets/img/DSC_0260.jpg" alt="Photo 10" loading="lazy" decoding="async">
+              </picture>
+            </div>
+            
+            <div class="photo-item">
+              <picture>
+                <source srcset="assets/img/DSC_0828.webp" type="image/webp">
+                <img src="assets/img/DSC_0828.jpg" alt="Photo 12" loading="lazy" decoding="async">
+              </picture>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <span>&copy; <span id="year"></span> Jose Baltasar Luco Korn, last update October 2025</span>
+    </div>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="assets/js/app.min.js"></script>
+
+  <!-- Viewport edge fades (toggled on only in Research) -->
+<div class="viewport-fade top" aria-hidden="true"></div>
+<div class="viewport-fade bottom" aria-hidden="true"></div>
+
+
+</body>
+</html>

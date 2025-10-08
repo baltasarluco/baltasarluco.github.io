@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Baltasar — Brick Breaker</title>
+  <link rel="icon" href="../assets/img/favicon.png" />
+  <link rel="stylesheet" href="../assets/css/styles.min.css" />
+  <style>
+    :root{
+      --bg:#2f2821; --fg:#efe9df; --muted:#b0a797;
+      --accent:#6cd39a; --accent-2:#7a5c36; --panel:#3a3128;
+      --panel-soft:#3f362c; --border:#4a4035;
+    }
+    html,body{margin:0;height:100%}
+    body{background:var(--panel); color:var(--fg); font:14px/1.4 system-ui,-apple-system, Segoe UI, Roboto, Ubuntu, Arial}
+    .popout{min-height:100dvh;display:flex; flex-direction:column; border:1px solid var(--border); background:var(--panel-soft)}
+    .popout__titlebar{
+      display:flex; align-items:center; justify-content:space-between;
+      height:44px; padding:0 12px 0 14px;
+      background:linear-gradient(180deg, rgba(122,92,54,.20), rgba(122,92,54,.08));
+      border-bottom:1px solid var(--border); user-select:none;
+    }
+    .popout__title{font-weight:700; letter-spacing:.2px}
+    .popout__close{
+      border:1px solid var(--border);
+      background:linear-gradient(180deg, rgba(122,92,54,.22), rgba(122,92,54,.10));
+      color:var(--fg); border-radius:10px; padding:6px 10px; cursor:pointer; line-height:1;
+    }
+    .hud{
+      display:flex; gap:12px; align-items:center; justify-content:center;
+      padding:8px 10px; border-bottom:1px solid var(--border);
+      background:linear-gradient(180deg, rgba(108,211,154,.10), rgba(122,92,54,.06));
+      color:var(--fg);
+    }
+    .hud .badge{
+      border:1px solid var(--border); border-radius:999px; padding:4px 10px;
+      background:rgba(122,92,54,.15)
+    }
+    .wrap{display:grid; place-items:center; padding:10px; min-height:0; flex:1}
+    canvas{
+      background:#221c16; box-shadow:0 10px 24px rgba(0,0,0,.35);
+      border:1px solid var(--border); border-radius:12px; touch-action:none
+    }
+    .help{text-align:center; color:var(--muted); margin:8px 0 0}
+    .btn{
+      display:inline-block; margin-left:8px; padding:6px 10px; border-radius:10px; color:var(--bg);
+      background:linear-gradient(180deg, #7ee2ac, #6cd39a); border:1px solid #61be8c;
+      text-decoration:none; font-weight:600
+    }
+  </style>
+</head>
+<body>
+  <div class="popout">
+    <div class="popout__titlebar">
+      <div class="popout__title">Brick Breaker</div>
+      <div>
+        <button id="btnReset" class="btn" type="button">Reset</button>
+        <button class="popout__close" type="button" onclick="window.close()">✕</button>
+      </div>
+    </div>
+
+    <div class="hud">
+      <span class="badge">Score: <strong id="score">0</strong></span>
+      <span class="badge">Level: <strong id="level">1</strong></span>
+      <span class="badge">Mouse = Paddle</span>
+    </div>
+
+    <div class="wrap">
+      <canvas id="game" width="440" height="440"></canvas>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const levelEl = document.getElementById('level');
+    const btnReset = document.getElementById('btnReset');
+
+    // --- Constants ---
+    const PADDLE_W = 80, PADDLE_H = 12, PADDLE_Y_OFFSET = 18;
+    const BALL_R = 6;
+    const ROWS_START = 4, COLS = 8;
+    const BRICK_H = 18, BRICK_GUTTER = 5, BRICK_TOP = 40, BRICK_LEFT = 20;
+
+    // Colors
+    const COLOR_BRICK = '#7a5c36';
+    const COLOR_BRICK_EDGE = '#8a6a44';
+    const COLOR_ACCENT = '#6cd39a';
+    const COLOR_BALL = '#bfead1';
+    const COLOR_TEXT = '#efe9df';
+
+    // Derived helpers
+    function brickWidth(){ return (canvas.width - 40) / COLS; }
+    function defaultPositions(){
+      return {
+        paddleX: (canvas.width - PADDLE_W)/2,
+        ballX: canvas.width/2,
+        ballY: canvas.height - 60,
+        ballVX: 3.6,
+        ballVY: -4.4
+      };
+    }
+    function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+
+    // --- State ---
+    let paddleX, ballX, ballY, ballVX, ballVY;
+    let rows = ROWS_START, level = 1, score = 0;
+    let running = false, gameOver = false;
+    let bricks = [];
+    let firstLayoutDone = false;
+    let overlayMsg = "";
+    let pendingResize = false;
+
+
+    function setOverlay(msg){
+      overlayMsg = msg || "";
+    }
+    function drawOverlay(){
+      if (!overlayMsg) return;
+      ctx.fillStyle = 'rgba(0,0,0,.35)';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = COLOR_TEXT;
+      ctx.font = 'bold 18px system-ui, -apple-system, Segoe UI, Roboto';
+      ctx.textAlign = 'center';
+      ctx.fillText(overlayMsg, canvas.width/2, canvas.height/2);
+    }
+
+    function createBricks() {
+      bricks = [];
+      const BW = brickWidth();
+      for (let r = 0; r < rows; r++) {
+        const row = [];
+        for (let c = 0; c < COLS; c++) {
+          row.push({ x: BRICK_LEFT + c * BW, y: BRICK_TOP + r * (BRICK_H + BRICK_GUTTER), hits: 1 });
+        }
+        bricks.push(row);
+      }
+    }
+
+    function applyDefaults(){
+      const d = defaultPositions();
+      paddleX = d.paddleX;
+      ballX = d.ballX; ballY = d.ballY;
+      ballVX = d.ballVX; ballVY = d.ballVY;
+    }
+
+    // --- Input: mouse/touch follow only while running (never when stopped or game over) ---
+    function pointerToCanvasX(evt){
+      const rect = canvas.getBoundingClientRect();
+      const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+      return (clientX - rect.left) * (canvas.width / rect.width);
+    }
+    function onPointerMove(evt){
+      if (!running || gameOver) return; // stays frozen unless running
+      const x = pointerToCanvasX(evt);
+      paddleX = clamp(x - PADDLE_W/2, 0, canvas.width - PADDLE_W);
+      evt.preventDefault();
+    }
+    canvas.addEventListener('mousemove', onPointerMove);
+    canvas.addEventListener('touchmove', onPointerMove, {passive:false});
+
+    // --- Start-only clicks (no pause) ---
+    function startIfPossible(){
+      if (gameOver){
+        resetGame();   // fresh bricks + defaults + overlay "Click to start"
+        overlayMsg = ""; // clear overlay when actually starting
+        randomizeBallDirection();
+        running = true;
+      } else if (!running){
+        overlayMsg = ""; // clear overlay
+        randomizeBallDirection();
+        running = true;
+      }
+      // if already running, ignore (no pause)
+    }
+    canvas.addEventListener('mousedown', startIfPossible);
+    canvas.addEventListener('touchstart', (e)=>{ startIfPossible(); e.preventDefault(); }, {passive:false});
+
+    // --- Reset button (manual hard reset) ---
+    btnReset.addEventListener('click', resetGame);
+    function resetGame() {
+      score = 0; level = 1; rows = ROWS_START; gameOver = false;
+      applyDefaults();
+      createBricks();
+      updateHUD();
+      running = false;
+      setOverlay('Click to start');  // ← persist overlay while idle
+      draw();
+    }
+
+
+    function updateHUD(){
+      scoreEl.textContent = score;
+      levelEl.textContent = level;
+    }
+
+    // --- Initialize ---
+    window.addEventListener('resize', () => {
+      if (running) {          // ← if playing, don't rebuild now
+        pendingResize = true; // queue it
+        return;
+      }
+      fitCanvas();            // idle or before first run → safe to resize/rebuild
+    });
+    fitCanvas();             // 1) size canvas for current window
+    applyDefaults();         // 2) defaults for this size
+    createBricks();          // 3) bricks for this width
+    updateHUD();
+    setOverlay('Click to start');
+    draw();
+
+
+    // --- Physics & collisions ---
+    function step(){
+      if (!running || gameOver) return;
+
+      ballX += ballVX;
+      ballY += ballVY;
+
+      // walls
+      if (ballX < BALL_R){ ballX = BALL_R; ballVX *= -1; }
+      if (ballX > canvas.width - BALL_R){ ballX = canvas.width - BALL_R; ballVX *= -1; }
+      if (ballY < BALL_R){ ballY = BALL_R; ballVY *= -1; }
+
+      // paddle
+      const paddleTop = canvas.height - PADDLE_Y_OFFSET - PADDLE_H;
+      if (ballY + BALL_R >= paddleTop &&
+          ballY - BALL_R <= paddleTop + PADDLE_H &&
+          ballX >= paddleX && ballX <= paddleX + PADDLE_W &&
+          ballVY > 0) {
+        ballY = paddleTop - BALL_R;
+        const hitPos = (ballX - (paddleX + PADDLE_W/2)) / (PADDLE_W/2); // -1..1
+        const speed = Math.hypot(ballVX, ballVY);
+        const angle = hitPos * (Math.PI/3); // up to 60°
+        ballVX = speed * Math.sin(angle);
+        ballVY = -Math.abs(speed * Math.cos(angle));
+        ballVX *= 1.01; ballVY *= 1.01; // slight speed-up each paddle hit
+      }
+
+      // bottom -> GAME OVER (reset to defaults and wait for click)
+      if (ballY > canvas.height + BALL_R){
+        running = false;
+        gameOver = true;
+
+        applyDefaults();              // ← go back to default paddle/ball
+        setOverlay("Game Over — click to start");
+        draw();                       // paint the reset frame with overlay
+        return;
+      }
+
+
+      // bricks
+      outer: for (let r=0; r<bricks.length; r++){
+        for (let c=0; c<bricks[r].length; c++){
+          const b = bricks[r][c];
+          if (!b || b.hits <= 0) continue;
+          const BW = brickWidth();
+          const bx = b.x, by = b.y, bw = BW - BRICK_GUTTER, bh = BRICK_H;
+          const cx = clamp(ballX, bx, bx + bw);
+          const cy = clamp(ballY, by, by + bh);
+          const dx = ballX - cx, dy = ballY - cy;
+          if (dx*dx + dy*dy <= BALL_R*BALL_R){
+            b.hits -= 1; score += 10; updateHUD();
+            if (Math.abs(dx) > Math.abs(dy)) ballVX *= -1; else ballVY *= -1;
+            if (b.hits <= 0) bricks[r][c] = null;
+            break outer;
+          }
+        }
+      }
+
+      // level cleared -> prep next level at start position
+      const anyLeft = bricks.some(row => row.some(b => b && b.hits > 0));
+      if (!anyLeft){
+        level += 1;
+        rows = Math.min(rows + 1, 10);
+        createBricks();
+        updateHUD();
+        applyDefaults();                     // ← start positions for next level
+        running = false;
+        setOverlay(`Level ${level} — click to start`);
+        draw();
+        return;
+      }
+
+    }
+
+    function randomizeBallDirection() {
+      // Launch upward with a random left/right angle within ±60°
+      const deg   = (Math.random() * 120 - 60) * Math.PI / 180;  // -60..+60 degrees
+      const speed = 5.0;  // tweak to taste (overall speed)
+      let vx = speed * Math.sin(deg);
+      let vy = -Math.abs(speed * Math.cos(deg)); // always upward
+
+      // Avoid near-vertical trajectories
+      const MIN_VX = 1.0;
+      if (Math.abs(vx) < MIN_VX) {
+        vx = MIN_VX * (Math.random() < 0.5 ? -1 : 1);
+        const v2 = Math.max(0.1, speed*speed - vx*vx);
+        vy = -Math.sqrt(v2);
+      }
+
+      ballVX = vx;
+      ballVY = vy;
+    }
+
+    // --- Rendering ---
+    function drawBackground(){
+      const g = ctx.createRadialGradient(canvas.width*0.7, canvas.height*0.3, 10, canvas.width*0.7, canvas.height*0.3, canvas.width*0.9);
+      g.addColorStop(0, '#241e18');
+      g.addColorStop(1, '#1a1511');
+      ctx.fillStyle = g;
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+    }
+    function drawPaddle(){
+      const y = canvas.height - PADDLE_Y_OFFSET - PADDLE_H;
+      ctx.fillStyle = COLOR_ACCENT;
+      ctx.fillRect(paddleX, y, PADDLE_W, PADDLE_H);
+    }
+    function drawBall(){
+      ctx.beginPath();
+      ctx.arc(ballX, ballY, BALL_R, 0, Math.PI*2);
+      ctx.fillStyle = COLOR_BALL;
+      ctx.fill();
+    }
+    function drawBricks(){
+      const BW = brickWidth();
+      for (const row of bricks){
+        for (const b of row){
+          if (!b || b.hits<=0) continue;
+          const bw = BW - BRICK_GUTTER;
+          ctx.fillStyle = COLOR_BRICK;
+          ctx.fillRect(b.x, b.y, bw, BRICK_H);
+          ctx.strokeStyle = COLOR_BRICK_EDGE;
+          ctx.strokeRect(b.x + .5, b.y + .5, bw - 1, BRICK_H - 1);
+        }
+      }
+    }
+    function drawOverlay(){
+      if (!overlayMsg) return;
+      ctx.fillStyle = 'rgba(0,0,0,.35)';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = COLOR_TEXT;
+      ctx.font = 'bold 18px system-ui, -apple-system, Segoe UI, Roboto';
+      ctx.textAlign = 'center';
+      ctx.fillText(overlayMsg, canvas.width/2, canvas.height/2);
+    }
+
+    function draw(){
+      drawBackground();
+      drawBricks();
+      drawPaddle();
+      drawBall();
+      drawOverlay();   // ← NEW: draw overlay on top every frame
+    }
+
+
+    // --- Main loop ---
+    function loop(){
+      step();
+      draw();
+      requestAnimationFrame(loop);
+    }
+    loop();
+
+    // --- Responsive square (no auto-reset on resize) ---
+    function fitCanvas(){
+    const MIN_WIN_W = 300;      // minimum outer window width
+    const MIN_WIN_H = 450;      // minimum outer window height
+    const PAD_X = 24;           // left/right padding around canvas
+    const PAD_Y = 120;          // header + HUD + margins above/below canvas
+    const MIN_CANVAS = 300;     // smallest canvas side
+    const MAX_CANVAS = 450;     // largest canvas side
+
+    // If this was opened via window.open, many browsers let us resize
+    try {
+      if (window.outerWidth && window.outerHeight &&
+          (window.outerWidth < MIN_WIN_W || window.outerHeight < MIN_WIN_H)) {
+        window.resizeTo(
+          Math.max(window.outerWidth, MIN_WIN_W),
+          Math.max(window.outerHeight, MIN_WIN_H)
+        );
+      }
+    } catch (e) {
+      // ignore—some browsers disallow programmatic resizing
+    }
+
+    // Compute space we actually have right now (never assume resizeTo worked)
+    const availW = Math.max(0, window.innerWidth  - PAD_X);
+    const availH = Math.max(0, window.innerHeight - PAD_Y);
+    const side   = Math.min(availW, availH);
+
+    // Final canvas size clamped to your desired range
+    const size = Math.max(MIN_CANVAS, Math.min(MAX_CANVAS, Math.floor(side)));
+
+    canvas.width = size;
+    canvas.height = size;
+
+    if (!firstLayoutDone || (!running && !gameOver)) {
+      createBricks();
+      applyDefaults();
+    }
+
+    draw();
+    firstLayoutDone = true;
+  }
+
+
+    window.addEventListener('resize', fitCanvas);
+    fitCanvas();
+  })();
+  </script>
+</body>
+</html>

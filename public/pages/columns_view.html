@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Column Information - Spectral Viewer</title>
+  <link rel="icon" href="../assets/img/favicon.png" />
+  <style>
+    :root {
+      --bg: #faf9f7;
+      --fg: #fff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #cbd5e1;
+      --accent: #2bb673;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 24px;
+      color: var(--text);
+      font-weight: 600;
+    }
+    .filter-box {
+      margin-bottom: 24px;
+    }
+    input {
+      padding: 10px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      width: 100%;
+      max-width: 400px;
+      background: var(--fg);
+      transition: border-color 0.2s;
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .spectrum-card {
+      background: var(--fg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      transition: box-shadow 0.2s;
+    }
+    .spectrum-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .spectrum-name {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+    .column-count {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+    .columns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .column-tag {
+      background: #e8ddd6;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: var(--text);
+      font-family: 'Monaco', 'Courier New', monospace;
+    }
+    .no-data {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+    .info-box {
+      background: #e0f2fe;
+      border: 1px solid #7dd3fc;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+      color: #0c4a6e;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+      <h1 style="margin: 0;">Available Columns by Spectrum</h1>
+      <button onclick="refreshData()" style="padding: 10px 20px; border: 1px solid var(--border); border-radius: 8px; background: var(--accent); color: white; cursor: pointer; font-size: 14px; font-weight: 600; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+        ↻ Refresh
+      </button>
+    </div>
+    <div class="info-box" id="infoBox">
+      Loading column information from parent window...
+    </div>
+    <div class="filter-box">
+      <input type="text" id="filterInput" placeholder="Filter by spectrum name..." onkeyup="filterSpectra()">
+    </div>
+    <div id="spectraList" style="display: none;">
+      <!-- Content will be populated by JavaScript -->
+    </div>
+  </div>
+  
+  <script>
+    let spectraData = {};
+    
+    // Listen for data from parent window
+    window.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'spectraData') {
+        console.log('Received spectra data:', event.data.data);
+        spectraData = event.data.data;
+        
+        // Hide loading message
+        const infoBox = document.getElementById('infoBox');
+        if (infoBox) infoBox.style.display = 'none';
+        
+        // Display the data
+        displaySpectra();
+      }
+    });
+    
+    // Request data from parent on page load/refresh
+    window.addEventListener('DOMContentLoaded', () => {
+      if (window.opener) {
+        console.log('Requesting initial data from parent...');
+        window.opener.postMessage({ type: 'requestSpectraData' }, '*');
+      } else {
+        // No parent window, show error
+        const infoBox = document.getElementById('infoBox');
+        const listEl = document.getElementById('spectraList');
+        if (infoBox) {
+          infoBox.textContent = 'Error: This page must be opened from the Spectral Viewer.';
+        }
+        if (listEl) {
+          listEl.style.display = 'block';
+          listEl.innerHTML = '<div class="no-data">No column information available. Please load spectra in the main viewer.</div>';
+        }
+      }
+    });
+    
+    // Function to refresh data from parent
+    function refreshData() {
+      console.log('Requesting fresh data from parent...');
+      
+      // Show loading message
+      const infoBox = document.getElementById('infoBox');
+      const listEl = document.getElementById('spectraList');
+      if (infoBox) {
+        infoBox.textContent = 'Refreshing data...';
+        infoBox.style.display = 'block';
+      }
+      if (listEl) {
+        listEl.style.display = 'none';
+      }
+      
+      if (window.opener) {
+        window.opener.postMessage({ type: 'requestSpectraData' }, '*');
+      } else {
+        if (infoBox) {
+          infoBox.textContent = 'Error: Could not connect to parent window.';
+        }
+        alert('Could not connect to parent window. Please ensure the main viewer is still open.');
+      }
+    }
+    
+    function displaySpectra() {
+      console.log('displaySpectra called with data:', spectraData);
+      const listEl = document.getElementById('spectraList');
+      const infoBox = document.getElementById('infoBox');
+      
+      if (!listEl) {
+        console.error('spectraList element not found');
+        return;
+      }
+      
+      // Hide loading message
+      if (infoBox) infoBox.style.display = 'none';
+      
+      // Show the list container
+      listEl.style.display = 'block';
+      
+      if (!spectraData || typeof spectraData !== 'object') {
+        console.error('Invalid spectra data:', spectraData);
+        listEl.innerHTML = '<div class="no-data">No column information available. Please load spectra in the main viewer.</div>';
+        return;
+      }
+      
+      const names = Object.keys(spectraData);
+      console.log('Found spectrum names:', names);
+      
+      if (names.length === 0) {
+        listEl.innerHTML = '<div class="no-data">No column information available. Please load spectra in the main viewer.</div>';
+        return;
+      }
+      
+      let html = '';
+      let validCount = 0;
+      
+      names.forEach(name => {
+        const spectrum = spectraData[name];
+        console.log(`Processing spectrum: ${name}`, spectrum);
+        
+        if (!spectrum) {
+          console.warn(`Spectrum ${name} is null or undefined`);
+          return;
+        }
+        
+        if (!spectrum.columns || spectrum.columns.length === 0) {
+          console.warn(`Spectrum ${name} has no columns`);
+          return;
+        }
+        
+        validCount++;
+        html += `
+          <div class="spectrum-card" data-name="${name.toLowerCase()}">
+            <div class="spectrum-name">${escapeHtml(name)}</div>
+            <div class="column-count">${spectrum.columns.length} column${spectrum.columns.length !== 1 ? 's' : ''}</div>
+            <div class="columns">`;
+        
+        spectrum.columns.forEach(col => {
+          html += `<span class="column-tag">${escapeHtml(col)}</span>`;
+        });
+        
+        html += `
+            </div>
+          </div>`;
+      });
+      
+      if (validCount === 0) {
+        listEl.innerHTML = '<div class="no-data">No column information available. Please load spectra in the main viewer.</div>';
+      } else {
+        listEl.innerHTML = html;
+        console.log(`Displayed ${validCount} spectra`);
+      }
+    }
+    
+    function filterSpectra() {
+      const filter = document.getElementById('filterInput').value.toLowerCase();
+      const cards = document.querySelectorAll('.spectrum-card');
+      let visibleCount = 0;
+      
+      cards.forEach(card => {
+        const name = card.dataset.name;
+        if (name.includes(filter)) {
+          card.style.display = 'block';
+          visibleCount++;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+      
+      // Show message if no results
+      if (visibleCount === 0 && cards.length > 0) {
+        const listEl = document.getElementById('spectraList');
+        const existing = listEl.querySelector('.no-data');
+        if (!existing) {
+          const noMatch = document.createElement('div');
+          noMatch.className = 'no-data';
+          noMatch.textContent = 'No spectra match your filter.';
+          listEl.appendChild(noMatch);
+        }
+      } else {
+        const noMatch = document.querySelector('#spectraList .no-data');
+        if (noMatch) noMatch.remove();
+      }
+    }
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
