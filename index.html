@@ -27,6 +27,7 @@
         <a href="#research" class="nav__link" data-navto="research">Research</a>
         <a href="#publications" class="nav__link" data-navto="publications">Publications</a>
         <a href="#about" class="nav__link" data-navto="about">About Me</a>
+        <a href="#contact" class="nav__link" data-navto="contact">Contact</a>
         <a href="pages/spectral_viewer.html" class="nav__link">Interactive Spectra Viewer</a>
       </nav>
     </div>
@@ -628,6 +629,56 @@
     
       </div>
     </section>
+
+    <section class="section is-hidden" data-section="contact" aria-labelledby="contact-title">
+      <h2 id="contact-title" class="subtitle">Get in Touch</h2>
+      <div class="contact-form-grid">
+        <article class="card contact-info-card">
+          <div class="contact-info-card__row">
+            <h3 class="contact-info-card__title">Other links</h3>
+            <a class="btn btn--ghost contact-btn" href="https://www.linkedin.com/in/jose-baltasar-luco-korn" target="_blank" rel="noopener">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M4.98 3.5a2.5 2.5 0 1 0 0 5.001 2.5 2.5 0 0 0 0-5ZM3 9h4v12H3zM14.5 9c-2.08 0-3.5 1.14-3.5 3.02V21h4v-6.07c0-1.08.75-1.78 1.82-1.78 1.04 0 1.68.7 1.68 1.78V21h4v-6.93C22.5 10.75 20.86 9 18.5 9c-1.4 0-2.49.62-3 1.44V9h-1z"/>
+              </svg>
+              <span>LinkedIn</span>
+            </a>
+            <a class="btn btn--ghost contact-btn" href="https://github.com/baltasarluco" target="_blank" rel="noopener">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 .5A11.5 11.5 0 0 0 .5 12c0 5.08 3.29 9.38 7.86 10.9.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.34-1.3-1.7-1.3-1.7-1.06-.72.08-.71.08-.71 1.18.08 1.8 1.21 1.8 1.21 1.04 1.78 2.72 1.27 3.38.97.11-.77.41-1.27.74-1.56-2.55-.3-5.23-1.28-5.23-5.72 0-1.26.45-2.28 1.2-3.09-.12-.3-.52-1.52.12-3.17 0 0 .98-.31 3.2 1.18a11.1 11.1 0 0 1 5.82 0c2.21-1.49 3.2-1.18 3.2-1.18.64 1.65.24 2.87.12 3.17.75.81 1.2 1.83 1.2 3.09 0 4.45-2.68 5.41-5.24 5.71.42.36.8 1.07.8 2.17v3.22c0 .31.21.66.8.55A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5z"/>
+              </svg>
+              <span>GitHub</span>
+            </a>
+          </div>
+        </article>
+
+        <article class="card contact-form-card">
+          <h3 class="contact-form-card__title">Send me a message</h3>
+          <p class="contact-form-card__lead">Share your project ideas, collaboration thoughts, or astronomy questions.</p>
+          <form id="contact-form" class="contact-form" novalidate>
+            <div class="contact-form__group">
+              <label for="contact-name">Your name</label>
+              <input type="text" id="contact-name" name="name" placeholder="Your name" required>
+            </div>
+            <div class="contact-form__group">
+              <label for="contact-email">Your email</label>
+              <input type="email" id="contact-email" name="from" placeholder="name@example.com" required>
+            </div>
+            <div class="contact-form__group">
+              <label for="contact-subject">Subject</label>
+              <input type="text" id="contact-subject" name="subject" placeholder="What would you like to talk about?" required>
+            </div>
+            <div class="contact-form__group">
+              <label for="contact-message">Message</label>
+              <textarea id="contact-message" name="message" rows="6" placeholder="Write your message here..." required></textarea>
+            </div>
+            <div class="contact-form__actions">
+              <button type="submit" class="btn btn--accent">Send email</button>
+              <p class="contact-form__status" id="contact-status" role="status" aria-live="polite"></p>
+            </div>
+          </form>
+        </article>
+      </div>
+    </section>
   </main>
 
   <div class="viewport-fade bottom" aria-hidden="true"></div>
@@ -640,6 +691,68 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="assets/js/app.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('contact-form');
+      const status = document.getElementById('contact-status');
+      const endpoint = 'https://formsubmit.co/ajax/baltasarluco@uc.cl';
+
+      if (!form || !status) return;
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const formData = new FormData(form);
+        const payload = {
+          name: formData.get('name')?.trim() || '',
+          email: formData.get('from')?.trim() || '',
+          subject: formData.get('subject')?.trim() || '',
+          message: formData.get('message')?.trim() || ''
+        };
+
+        if (!payload.name || !payload.email || !payload.subject || !payload.message) {
+          status.textContent = 'Please complete all fields before sending.';
+          status.className = 'contact-form__status is-error';
+          return;
+        }
+
+        const submitButton = form.querySelector('button[type="submit"]');
+        if (submitButton) submitButton.disabled = true;
+        status.textContent = 'Sending…';
+        status.className = 'contact-form__status is-pending';
+
+        try {
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+              name: payload.name,
+              email: payload.email,
+              subject: payload.subject,
+              message: payload.message
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(`Unexpected response (${response.status})`);
+          }
+
+          status.textContent = 'Thanks! Your message has been sent.';
+          status.className = 'contact-form__status is-success';
+          form.reset();
+        } catch (error) {
+          console.error('Contact form submission failed:', error);
+          status.textContent = 'Sorry, something went wrong. Please try again later or email me directly at baltasarluco@uc.cl.';
+          status.className = 'contact-form__status is-error';
+        } finally {
+          if (submitButton) submitButton.disabled = false;
+        }
+      });
+    });
+  </script>
 
 </body>
 </html>

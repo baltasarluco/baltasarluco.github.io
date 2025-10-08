@@ -708,6 +708,97 @@ section[data-section="research"] [data-reveal]{
   transition: box-shadow .2s ease, transform .2s ease;
 }
 
+.contact-form-grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:24px;
+  margin-top:20px;
+}
+
+.contact-form-card__title,
+.contact-info-card__title{
+  margin:0 0 8px;
+  font-size:24px;
+}
+
+.contact-form-card__lead{
+  margin:0 0 16px;
+  color:var(--muted);
+}
+
+.contact-form{
+  display:grid;
+  gap:16px;
+}
+
+.contact-form__group{display:grid;gap:6px;}
+.contact-form__group label{font-weight:600;font-size:14px;color:var(--muted);}
+.contact-form__group input,
+.contact-form__group textarea{
+  width:100%;
+  padding:12px 14px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:var(--panel);
+  font:inherit;
+  color:var(--fg2);
+  transition:border-color .2s ease, box-shadow .2s ease;
+}
+
+.contact-form__group textarea{min-height:140px;resize:vertical;}
+
+.contact-form__group input:focus,
+.contact-form__group textarea:focus{
+  outline:none;
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(43,182,115,.18);
+}
+
+.contact-form__actions{display:grid;gap:8px;}
+.contact-form__footnote{margin:0;font-size:13px;color:var(--muted);}
+
+.contact-info-card{
+  background:var(--panel-soft);
+  display:grid;
+  gap:16px;
+}
+
+
+.contact-info-card__row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:nowrap;
+}
+
+.contact-info-card__row .btn{
+  white-space:nowrap;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+}
+.contact-info-card__row .btn:first-of-type{margin-left:auto;}
+.contact-btn svg{display:block;width:16px;height:16px;}
+
+@media (max-width:720px){
+  .contact-info-card__row{
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .contact-info-card__row .btn{margin-left:0;width:100%;justify-content:center;}
+}
+
+.contact-info-card__hint{margin:0;font-size:13px;color:var(--muted);}
+
+.contact-form__status{
+  margin:0;
+  font-size:14px;
+  color:var(--muted);
+}
+.contact-form__status.is-pending{color:var(--accent-2);}
+.contact-form__status.is-success{color:#1b7f4d;}
+.contact-form__status.is-error{color:#b91c1c;}
+
 /* Put these near your other :root vars */
 :root{
   --header-h: 64px;            /* your sticky header height */
