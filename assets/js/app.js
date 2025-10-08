@@ -23,6 +23,162 @@ const links = Array.from(document.querySelectorAll('.nav__link')).filter(a => a.
 const sections = Array.from(document.querySelectorAll('[data-section]'));
 const map = new Map(sections.map(s => [s.dataset.section, s]));
 
+const SCROLL_TOLERANCE = 1;
+const OVERFLOW_RE = /(auto|scroll|overlay)/i;
+
+const viewportFades = {
+  top: null,
+  bottom: null
+};
+let viewportFadesEnabled = false;
+let viewportFadeRaf = null;
+
+function getScrollContainer(){
+  return document.scrollingElement || document.documentElement || document.body;
+}
+
+function hasScrollableAncestorWithRoom(target, delta){
+  let node = target instanceof Element ? target : target && target.parentElement;
+  while (node && node !== document.body && node !== document.documentElement){
+    const style = window.getComputedStyle(node);
+    if (OVERFLOW_RE.test(style.overflowY)){
+      const max = node.scrollHeight - node.clientHeight;
+      if (max > SCROLL_TOLERANCE){
+        const top = node.scrollTop;
+        if ((delta < 0 && top > SCROLL_TOLERANCE) || (delta > 0 && top < max - SCROLL_TOLERANCE)){
+          return true;
+        }
+      }
+    }
+    node = node.parentElement;
+  }
+  return false;
+}
+
+function clampPageScroll(delta, target){
+  if (!Number.isFinite(delta) || delta === 0) return false;
+  if (hasScrollableAncestorWithRoom(target, delta)) return false;
+
+  const scroller = getScrollContainer();
+  const viewH = window.innerHeight || scroller.clientHeight || 0;
+  if (viewH <= 0) return false;
+
+  const scrollH = scroller.scrollHeight || 0;
+  const maxScroll = Math.max(0, scrollH - viewH);
+  let scrollTop = scroller.scrollTop;
+  if (!Number.isFinite(scrollTop)) scrollTop = window.pageYOffset || 0;
+  if (!Number.isFinite(scrollTop)) scrollTop = 0;
+
+  if (delta < 0 && scrollTop <= SCROLL_TOLERANCE){
+    if (scrollTop !== 0) scroller.scrollTop = 0;
+    return true;
+  }
+
+  if (delta > 0 && scrollTop >= maxScroll - SCROLL_TOLERANCE){
+    if (scrollTop !== maxScroll) scroller.scrollTop = maxScroll;
+    return true;
+  }
+
+  return false;
+}
+
+function ensureViewportFades(){
+  if (!viewportFades.top || !viewportFades.top.isConnected){
+    viewportFades.top = document.querySelector('.viewport-fade.top');
+    if (viewportFades.top) viewportFades.top.classList.add('is-visible');
+  }
+  if (!viewportFades.bottom || !viewportFades.bottom.isConnected){
+    viewportFades.bottom = document.querySelector('.viewport-fade.bottom');
+    if (viewportFades.bottom) viewportFades.bottom.classList.add('is-visible');
+  }
+  if (viewportFades.top) viewportFades.top.classList.add('is-visible');
+  if (viewportFades.bottom) viewportFades.bottom.classList.add('is-visible');
+  return viewportFades.top || viewportFades.bottom;
+}
+
+function applyViewportFades(){
+  if (!viewportFadesEnabled) return;
+  if (!ensureViewportFades()) return;
+  const scroller = getScrollContainer();
+  const viewH = window.innerHeight || scroller.clientHeight || 0;
+  const scrollH = scroller.scrollHeight || 0;
+  const maxScroll = Math.max(0, scrollH - viewH);
+  let scrollTop = scroller.scrollTop;
+  if (!Number.isFinite(scrollTop)) scrollTop = window.pageYOffset || 0;
+  if (!Number.isFinite(scrollTop) || scrollTop < 0) scrollTop = 0;
+
+  const nearTop = scrollTop <= SCROLL_TOLERANCE;
+  const nearBottom = scrollTop >= maxScroll - SCROLL_TOLERANCE || maxScroll <= 0;
+}
+
+function queueViewportFadeUpdate(){
+  if (!viewportFadesEnabled) return;
+  if (viewportFadeRaf) return;
+  viewportFadeRaf = requestAnimationFrame(() => {
+    viewportFadeRaf = null;
+    applyViewportFades();
+  });
+}
+
+const wheelClampHandler = (event) => {
+  if (clampPageScroll(event.deltaY, event.target)){
+    event.preventDefault();
+    queueViewportFadeUpdate();
+  }
+};
+
+window.addEventListener('wheel', wheelClampHandler, { passive: false });
+
+let lastTouchY = null;
+
+window.addEventListener('touchstart', (event) => {
+  if (event.touches.length === 1){
+    lastTouchY = event.touches[0].clientY;
+  } else {
+    lastTouchY = null;
+  }
+}, { passive: true });
+
+window.addEventListener('touchmove', (event) => {
+  if (lastTouchY === null || event.touches.length !== 1) return;
+  const currentY = event.touches[0].clientY;
+  const delta = lastTouchY - currentY;
+  if (clampPageScroll(delta, event.target)){
+    event.preventDefault();
+    queueViewportFadeUpdate();
+  }
+  lastTouchY = currentY;
+}, { passive: false });
+
+const resetTouchClamp = () => { lastTouchY = null; };
+window.addEventListener('touchend', resetTouchClamp, { passive: true });
+window.addEventListener('touchcancel', resetTouchClamp, { passive: true });
+
+function enableViewportFades(){
+  if (viewportFadesEnabled) return;
+  if (!ensureViewportFades()) return;
+  viewportFadesEnabled = true;
+  const scroller = getScrollContainer();
+  scroller.addEventListener('scroll', queueViewportFadeUpdate, { passive: true });
+  window.addEventListener('resize', queueViewportFadeUpdate);
+  queueViewportFadeUpdate();
+}
+
+function disableViewportFades(){
+  if (!viewportFadesEnabled) return;
+  viewportFadesEnabled = false;
+  const scroller = getScrollContainer();
+  scroller.removeEventListener('scroll', queueViewportFadeUpdate);
+  window.removeEventListener('resize', queueViewportFadeUpdate);
+  if (viewportFadeRaf){
+    cancelAnimationFrame(viewportFadeRaf);
+    viewportFadeRaf = null;
+  }
+  if (ensureViewportFades()){
+    if (viewportFades.top) viewportFades.top.classList.remove('is-visible');
+    if (viewportFades.bottom) viewportFades.bottom.classList.remove('is-visible');
+  }
+}
 let currentId = null;
 let isTransitioning = false;
 let nextId = null;
@@ -103,6 +259,7 @@ function showSection(id, push = true){
 
   currentId = id;
   setActiveLink(id);
+  setViewClass(id);
   if (push) history.replaceState(null, '', '#' + id);
 }
 
@@ -118,6 +275,8 @@ links.forEach(a => {
 
 function setViewClass(id){
   document.body.classList.toggle('view-research', id === 'research');
+  enableViewportFades();
+  queueViewportFadeUpdate();
 }
 
 function clearTransitionState() {
@@ -150,12 +309,15 @@ window.addEventListener('pageshow', (e) => {
   if ((isBackForward || (document.referrer && /viewer\.html(\b|$)/.test(document.referrer))) && restoreTarget) {
     history.replaceState(null, '', '#' + restoreTarget);
     forceShowSection(restoreTarget);
+    setViewClass(restoreTarget);
     try { sessionStorage.removeItem('restoreTarget'); } catch(_) {}
     return;
   }
 
   const id = (location.hash || '#home').slice(1);
-  forceShowSection(map.has(id) ? id : 'home');
+  const target = map.has(id) ? id : 'home';
+  forceShowSection(target);
+  setViewClass(target);
 });
 
 function initialSection(){
@@ -172,8 +334,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.addEventListener('hashchange', () => {
   const id = (location.hash || '').replace('#','');
-  if (map.has(id)) showSection(id, false);
-  setViewClass(id);
+  if (map.has(id)) {
+    showSection(id, false);
+  } else {
+    setViewClass(id);
+  }
 });
 
 const brandTrigger = document.getElementById('brand-trigger');

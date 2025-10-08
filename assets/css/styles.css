@@ -34,11 +34,12 @@ html,body{
     var(--bg);
   color: var(--fg2);
   font:16px/1.6 "Inter", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial;
+  overscroll-behavior-y: contain;   /* avoid bounce overscroll at extremes */
 }
 .container{max-width:1100px;margin:0 auto;padding:0 20px}
 
 /* Header */
-.header{position:sticky;top:0;z-index:20;background:#45392f;backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.header{position:sticky;top:0;z-index:20;background:#45392f;backdrop-filter:blur(8px);border-bottom:1px solid var(--border);left:0;right:0;width:100vw}
 .header__inner{display:flex;align-items:center;justify-content:space-between;height:64px}
 .brand{
   font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -714,14 +715,16 @@ section[data-section="research"] [data-reveal]{
 
 .viewport-fade{
   position: fixed;
-  left: 0; right: 0;
+  left: 0;
+  right: 0;
   pointer-events: none;
-  z-index: 9;                  /* keep UNDER header (header is z-index:20) */
+  z-index: 10;                  /* between header (20) and content */
+  opacity: 1;
 }
 
 .viewport-fade.top{
-  top: var(--header-h);        /* start fade below the sticky header */
-  height: var(--viewport-fade-size);
+  top: 0;
+  height: max(var(--viewport-fade-size), calc(var(--header-h) * 3));
   background: linear-gradient(to bottom, var(--bg) 0%, transparent 100%);
 }
 
@@ -729,6 +732,10 @@ section[data-section="research"] [data-reveal]{
   bottom: 0;
   height: var(--viewport-fade-size);
   background: linear-gradient(to top, var(--bg) 0%, transparent 100%);
+}
+
+.viewport-fade.is-visible{
+  opacity: 1;
 }
 
 
@@ -1204,4 +1211,3 @@ section[data-section="research"] [data-reveal]{
     width: 100% !important;
   }
 }
-

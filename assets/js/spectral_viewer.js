@@ -1878,7 +1878,7 @@ function updateLineMarkers(){
       const layout=baseLayout();
       layout.shapes = buildLineShapes();
 
-      layout.annotations=[{text:names.length?'Select spectra to visualise':'Load spectra to begin',x:0.5,y:0.5,xref:'paper',yref:'paper',showarrow:false,font:{color:'#94a3b8',size:16}}];
+      layout.annotations=[{text:names.length?'Select plots to visualise':'Load spectra and add plots to begin',x:0.5,y:0.5,xref:'paper',yref:'paper',showarrow:false,font:{color:'#94a3b8',size:30}}];
       ignoreRelayout=true;
       Plotly.react(elements.graph, [], layout, config).then(() => {
         ignoreRelayout=false; updateUndoRedoButtons();
