@@ -4,7 +4,7 @@ Modern single-page site with smooth section fades plus an interactive spectral v
 
 ## Project Structure
 ```
-public/
+.
   index.html                 # landing page and SPA shell
   robots.txt                 # crawler directives
   assets/
@@ -25,12 +25,10 @@ public/
 ```
 
 ## Local Preview
-- Serve the site with any static server pointing to `public`, e.g.
-  - `python3 -m http.server 8080 --directory public`
-- Alternatively open `public/index.html` directly in a browser (some viewer features may require a server for file APIs).
+- Serve the repo root with any static server, e.g. `python3 -m http.server 8080`
+- Alternatively open `index.html` directly in a browser (some viewer features may require a server for file APIs).
 
 ## Deployment
-- Publish the contents of `public/` on your static host of choice.
-- For GitHub Pages you can either keep the site in `main` and adjust the GitHub Pages source to a `gh-pages` branch generated from `public/`, or use an action/workflow that uploads the `public/` folder to the `gh-pages` branch.
-- Keep `public/CNAME` only if you want GitHub Pages to serve a custom domain; otherwise delete it.
-- `public/robots.txt` is optional. Remove or adjust it if you need different crawler rules.
+- Publish the repository root on your static host of choice.
+- For GitHub Pages (user site) select the `main` branch with `/` as the source so the root `index.html` is served.
+- Update `robots.txt` or add a `CNAME` file in the repository root if you need custom crawler rules or a custom domain.
