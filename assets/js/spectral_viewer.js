@@ -576,96 +576,112 @@ function checkCardsForOverflow(){
     return bestSep;
   }
 
+  function sanitizeColumnBase(raw, fallbackIndex){
+    let base = (raw ?? '').toString().trim();
+    if(!base) base = `col${fallbackIndex}`;
+    base = base.replace(/[\s]+/g, '_').replace(/[^A-Za-z0-9_.-]/g, '_');
+    if(!base || /^[^A-Za-z_]/.test(base)) base = `col${fallbackIndex}`;
+    return base;
+  }
+
+  function makeUniqueColumnName(raw, fallbackIndex, registry){
+    const base = sanitizeColumnBase(raw, fallbackIndex);
+    const count = (registry[base] || 0) + 1;
+    registry[base] = count;
+    return count === 1 ? base : `${base}_${count}`;
+  }
+
+  function assignLegacyColumns(result, columnOrder){
+    const aliases = ['WAVE', 'FLUX', 'SKY', 'ERR'];
+    const firstName = columnOrder[0] || null;
+    const firstArray = firstName && result[firstName] ? result[firstName] : null;
+    const numericColumns = columnOrder.filter(name => result[name] instanceof Float64Array && result[name].length);
+    const primaryNumeric = numericColumns[0] || null;
+    const fallbackLength = primaryNumeric ? result[primaryNumeric].length : (firstArray ? firstArray.length : 0);
+    const legacySources = {};
+
+    aliases.forEach((alias, idx) => {
+      let sourceName = numericColumns[idx] || primaryNumeric || null;
+      if(!sourceName && firstName && result[firstName] instanceof Float64Array && result[firstName].length){
+        sourceName = firstName;
+      }
+      if(sourceName && !(result[sourceName] instanceof Float64Array)){
+        sourceName = null;
+      }
+
+      if(sourceName && result[sourceName]){
+        legacySources[alias] = sourceName;
+        result[alias] = result[sourceName];
+      } else {
+        legacySources[alias] = null;
+        const fallbackArray = fallbackLength ? new Float64Array(fallbackLength) : new Float64Array(0);
+        fallbackArray.fill(NaN);
+        result[alias] = fallbackArray;
+      }
+    });
+
+    result.__legacySources = legacySources;
+  }
+
   function parseCSV(text, context){
     const lines = text.replace(/\r/g, '').split('\n');
     const trimmed = lines.filter(line => line.trim().length);
-    if(trimmed.length < 2) throw new Error('Empty CSV for ' + context);
+    if(trimmed.length === 0) throw new Error('Empty CSV for ' + context);
 
-    // Detect separator from first line
     const separator = detectSeparator(trimmed[0]);
+    const firstPartsRaw = trimmed[0].split(separator);
+    const firstPartsTrimmed = firstPartsRaw.map(cell => cell.trim());
+    const hasHeader = firstPartsTrimmed.some(cell => cell !== '' && isNaN(Number(cell)));
 
-    // Parse first line to check if it's a header or data
-    const firstLine = trimmed[0].split(separator).map(h => h.trim()).filter(h => h.length > 0);
-    const hasHeader = firstLine.some(cell => isNaN(Number(cell)));
-
+    const nameRegistry = {};
     let header = [];
     let dataStartIndex = 0;
 
-    if (hasHeader) {
-      // First line is a header
-      header = firstLine;
+    if(hasHeader){
+      header = firstPartsTrimmed.map((cell, idx) => makeUniqueColumnName(cell, idx + 1, nameRegistry));
       dataStartIndex = 1;
     } else {
-      // No header, generate column names: col1, col2, col3, ...
-      header = firstLine.map((_, i) => `col${i + 1}`);
+      header = firstPartsTrimmed.map((_, idx) => makeUniqueColumnName(`col${idx + 1}`, idx + 1, nameRegistry));
       dataStartIndex = 0;
     }
 
-    // Find required columns
-    const idx = { 
-      WAVE: header.indexOf('WAVE'), 
-      FLUX: header.indexOf('FLUX_STACK'), 
-      SKY: header.indexOf('FLUX_STACK_SKYSUB'), 
-      ERR: header.indexOf('ERR_STACK') 
-    };
+    if(!header.length) throw new Error('Could not determine columns for ' + context);
 
-    // If named columns not found, try to use first 4 columns as WAVE, FLUX, SKY, ERR
-    if(Object.values(idx).some(v => v === -1)) {
-      if (header.length >= 4) {
-        idx.WAVE = 0;
-        idx.FLUX = 1;
-        idx.SKY = 2;
-        idx.ERR = 3;
-      } else {
-        throw new Error('Missing required columns in ' + context);
-      }
-    }
+    const columnData = {};
+    header.forEach(name => { columnData[name] = []; });
 
     const rows = trimmed.slice(dataStartIndex);
+    let rowCount = 0;
 
-    // Initialize arrays for all columns
-    const columnData = {};
-    header.forEach(colName => {
-      columnData[colName] = [];
-    });
+    for(const row of rows){
+      const parts = row.split(separator);
 
-    // Also keep the legacy WAVE, FLUX, SKY, ERR for backward compatibility
-    const wave=[], flux=[], sky=[], err=[];
+      // Extend header if this row has more columns
+      while(parts.length > header.length){
+        const idx = header.length;
+        const newName = makeUniqueColumnName(`col${idx + 1}`, idx + 1, nameRegistry);
+        header.push(newName);
+        columnData[newName] = Array(rowCount).fill(NaN);
+      }
 
-    for(let i=0;i<rows.length;i++){
-      const parts = rows[i].split(separator).map(p => p.trim()).filter(p => p.length > 0);
-      const waveCell = (parts[idx.WAVE] || '').trim();
-      const waveValue = waveCell === '' ? NaN : Number(waveCell);
-      if(!Number.isFinite(waveValue)) continue;
+      for(let colIndex = 0; colIndex < header.length; colIndex++){
+        const colName = header[colIndex];
+        const rawValue = colIndex < parts.length ? parts[colIndex].trim() : '';
+        columnData[colName].push(parseCellNumber(rawValue));
+      }
 
-      // Store legacy columns
-      wave.push(waveValue);
-      flux.push(parseCellNumber(parts[idx.FLUX]));
-      sky.push(parseCellNumber(parts[idx.SKY]));
-      err.push(parseCellNumber(parts[idx.ERR]));
-
-      // Store all columns by their actual names
-      header.forEach((colName, colIndex) => {
-        columnData[colName].push(parseCellNumber(parts[colIndex]));
-      });
+      rowCount++;
     }
 
-    if(!wave.length) throw new Error('No valid wavelength samples in ' + context);
+    if(rowCount === 0) throw new Error('No data rows found in ' + context);
 
-    // Build result object with legacy columns + all actual columns
-    const result = { 
-      WAVE: Float64Array.from(wave), 
-      FLUX: Float64Array.from(flux), 
-      SKY: Float64Array.from(sky), 
-      ERR: Float64Array.from(err),
-      columns: header  // Store all column names (either from header or generated)
-    };
-
-    // Add all columns by their actual names
+    const result = { columns: header.slice() };
     header.forEach(colName => {
-      result[colName] = Float64Array.from(columnData[colName]);
+      const values = columnData[colName];
+      result[colName] = Float64Array.from(values);
     });
 
+    assignLegacyColumns(result, header);
     return result;
   }
 
@@ -684,6 +700,7 @@ function checkCardsForOverflow(){
     let offset = 0;
     let hduIndex = 0;
     const foundTables = [];
+    const asciiDecoder = new TextDecoder('ascii');
 
     function readHeader(){
       const headerSize = 2880;
@@ -735,6 +752,7 @@ function checkCardsForOverflow(){
 
       // Parse column information
       const columns = [];
+      const nameRegistry = {};
       for(let i = 1; i <= tfields; i++){
         const ttype = (header['TTYPE' + i] || '').trim();
         const tform = (header['TFORM' + i] || '').trim();
@@ -753,30 +771,59 @@ function checkCardsForOverflow(){
 
         let bytesPerElement = 0;
         let readFunc = null;
+        let columnType = 'numeric';
 
-        if(typeCode === 'D'){  // Double (64-bit float)
-          bytesPerElement = 8;
-          readFunc = (v, o) => v.getFloat64(o, false);
-        } else if(typeCode === 'E'){  // Float (32-bit float)
-          bytesPerElement = 4;
-          readFunc = (v, o) => v.getFloat32(o, false);
-        } else if(typeCode === 'J'){  // 32-bit integer
-          bytesPerElement = 4;
-          readFunc = (v, o) => v.getInt32(o, false);
+        switch(typeCode){
+          case 'D': // 64-bit float
+            bytesPerElement = 8;
+            readFunc = (v, o) => v.getFloat64(o, false);
+            break;
+          case 'E': // 32-bit float
+            bytesPerElement = 4;
+            readFunc = (v, o) => v.getFloat32(o, false);
+            break;
+          case 'J': // 32-bit int
+            bytesPerElement = 4;
+            readFunc = (v, o) => v.getInt32(o, false);
+            break;
+          case 'K': // 64-bit int
+            bytesPerElement = 8;
+            readFunc = (v, o) => Number(v.getBigInt64(o, false));
+            break;
+          case 'I': // 16-bit int
+            bytesPerElement = 2;
+            readFunc = (v, o) => v.getInt16(o, false);
+            break;
+          case 'B': // unsigned byte
+            bytesPerElement = 1;
+            readFunc = (v, o) => v.getUint8(o);
+            break;
+          case 'L': // logical
+            bytesPerElement = 1;
+            readFunc = (v, o) => {
+              const byte = v.getUint8(o);
+              const char = String.fromCharCode(byte);
+              return char === 'T' ? 1 : (char === 'F' ? 0 : NaN);
+            };
+            break;
+          case 'A': // ASCII string
+            bytesPerElement = 1;
+            columnType = 'string';
+            readFunc = (_v, o, repeatCount) => {
+              const length = repeatCount * bytesPerElement;
+              const slice = new Uint8Array(buffer, o, length);
+              return asciiDecoder.decode(slice).trim();
+            };
+            break;
         }
 
         if(readFunc){
-          columns.push({ name: ttype, repeat, bytesPerElement, readFunc });
+          const name = makeUniqueColumnName(ttype, i, nameRegistry);
+          columns.push({ name, repeat, bytesPerElement, readFunc, columnType });
         }
       }
 
-      // Find our required columns
-      const waveCol = columns.find(c => c.name === 'WAVE');
-      const fluxCol = columns.find(c => c.name === 'FLUX_STACK');
-      const skyCol = columns.find(c => c.name === 'FLUX_STACK_SKYSUB');
-      const errCol = columns.find(c => c.name === 'ERR_STACK');
-
-      if(!waveCol || !fluxCol || !skyCol || !errCol) return null;
+      if(!columns.length) return null;
 
       // Save all column names
       const columnNames = columns.map(c => c.name);
@@ -788,7 +835,6 @@ function checkCardsForOverflow(){
       });
 
       // Read data
-      const wave = [], flux = [], sky = [], err = [];
       const rowSize = naxis1;
 
       for(let row = 0; row < naxis2; row++){
@@ -796,39 +842,23 @@ function checkCardsForOverflow(){
         let colOffset = 0;
 
         for(const col of columns){
-          const value = col.readFunc(view, rowOffset + colOffset);
-
-          // Store in named column
+          const value = col.readFunc(view, rowOffset + colOffset, col.repeat);
           columnData[col.name].push(value);
-
-          // Also store in legacy columns for backward compatibility
-          if(col === waveCol){
-            wave.push(value);
-          } else if(col === fluxCol){
-            flux.push(value);
-          } else if(col === skyCol){
-            sky.push(value);
-          } else if(col === errCol){
-            err.push(value);
-          }
           colOffset += col.repeat * col.bytesPerElement;
         }
       }
 
-      // Build result object with legacy columns + all actual columns
-      const result = { 
-        WAVE: Float64Array.from(wave), 
-        FLUX: Float64Array.from(flux), 
-        SKY: Float64Array.from(sky), 
-        ERR: Float64Array.from(err),
-        columns: columnNames  // Store all column names
-      };
-
-      // Add all columns by their actual names
+      const result = { columns: columnNames.slice() };
       columns.forEach(col => {
-        result[col.name] = Float64Array.from(columnData[col.name]);
+        const raw = columnData[col.name];
+        if(col.columnType === 'numeric'){
+          result[col.name] = Float64Array.from(raw.map(val => Number(val)));
+        } else {
+          result[col.name] = raw.slice();
+        }
       });
 
+      assignLegacyColumns(result, columnNames);
       return result;
     }
 
@@ -883,7 +913,7 @@ function checkCardsForOverflow(){
     }
 
     if(!foundTables.length){
-      throw new Error('No binary table with required columns found in ' + filename);
+      throw new Error('No binary tables with supported numeric columns found in ' + filename);
     }
 
     return foundTables;
@@ -931,7 +961,10 @@ function checkCardsForOverflow(){
 
   function ingestSpectrum(filename, text){
     const data = parseCSV(text, filename);
-    if(!data.WAVE.length) return 0;
+    if(!data || !data.columns || !data.columns.length) return 0;
+    const firstColumn = data.columns[0];
+    const length = firstColumn && data[firstColumn] ? data[firstColumn].length : 0;
+    if(!length) return 0;
     const name = sanitizeName(filename);
     spectra[name] = data;
     if(!state.colors[name]){
@@ -947,7 +980,10 @@ function checkCardsForOverflow(){
     let count = 0;
 
     for(const {data, hduIndex} of tables){
-      if(!data.WAVE.length) continue;
+      if(!data || !data.columns || !data.columns.length) continue;
+      const firstColumn = data.columns[0];
+      const length = firstColumn && data[firstColumn] ? data[firstColumn].length : 0;
+      if(!length) continue;
 
       // Create name with HDU index
       const baseName = sanitizeName(filename);
@@ -1080,16 +1116,22 @@ function checkCardsForOverflow(){
       elements.errorColumnSelect.appendChild(errOption);
     });
 
-    // Auto-select common defaults if they exist
-    if (columns.includes('WAVE')) {
-      elements.xColumnSelect.value = 'WAVE';
-    }
-    if (columns.includes('FLUX')) {
-      elements.yColumnSelect.value = 'FLUX';
-    }
-    if (columns.includes('ERR')) {
-      elements.errorColumnSelect.value = 'ERR';
-    }
+    const legacySources = spec.__legacySources || {};
+
+    const defaultX = legacySources.WAVE && columns.includes(legacySources.WAVE)
+      ? legacySources.WAVE
+      : (columns[0] || '');
+    if (defaultX) elements.xColumnSelect.value = defaultX;
+
+    const defaultY = legacySources.FLUX && columns.includes(legacySources.FLUX)
+      ? legacySources.FLUX
+      : (columns[1] || columns[0] || '');
+    if (defaultY) elements.yColumnSelect.value = defaultY;
+
+    const defaultErr = legacySources.ERR && columns.includes(legacySources.ERR)
+      ? legacySources.ERR
+      : (columns[2] || '');
+    if (defaultErr) elements.errorColumnSelect.value = defaultErr;
   }
 
   function buildList(){
