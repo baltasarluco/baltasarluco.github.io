@@ -35,11 +35,12 @@ html,body{
   color: var(--fg2);
   font:16px/1.6 "Inter", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial;
   overscroll-behavior-y: contain;   /* avoid bounce overscroll at extremes */
+  margin:0;
 }
 .container{max-width:1100px;margin:0 auto;padding:0 20px}
 
 /* Header */
-.header{position:sticky;top:0;z-index:20;background:#45392f;backdrop-filter:blur(8px);border-bottom:1px solid var(--border);left:0;right:0;width:100vw}
+.header{position:sticky;top:0;z-index:20;background:#45392f;backdrop-filter:blur(8px);border-bottom:1px solid var(--border);left:0;right:0;width:100%}
 .header__inner{display:flex;align-items:center;justify-content:space-between;height:64px}
 .brand{
   font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
