@@ -5,12 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Baltasar — Brick Breaker</title>
   <link rel="icon" href="../assets/img/favicon.png" />
-  <link rel="stylesheet" href="../assets/css/styles.min.css" />
+  <link rel="stylesheet" href="../assets/css/styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap">
   <style>
     :root{
-      --bg:#2f2821; --fg:#efe9df; --muted:#b0a797;
-      --accent:#6cd39a; --accent-2:#7a5c36; --panel:#3a3128;
-      --panel-soft:#3f362c; --border:#4a4035;
+      --bg:#09090b; --fg:#f4f4f5; --muted:#a1a1aa;
+      --accent:#34d399; --accent-2:#a1a1aa; --panel:#18181b;
+      --panel-soft:#27272a; --border:#3f3f46;
     }
     html,body{margin:0;height:100%}
     body{background:var(--panel); color:var(--fg); font:14px/1.4 system-ui,-apple-system, Segoe UI, Roboto, Ubuntu, Arial}
@@ -18,36 +21,40 @@
     .popout__titlebar{
       display:flex; align-items:center; justify-content:space-between;
       height:44px; padding:0 12px 0 14px;
-      background:linear-gradient(180deg, rgba(122,92,54,.20), rgba(122,92,54,.08));
+      background:rgba(255,255,255,.03);
       border-bottom:1px solid var(--border); user-select:none;
     }
-    .popout__title{font-weight:700; letter-spacing:.2px}
+    .popout__title{font-family:"Bebas Neue",system-ui,sans-serif; font-weight:400; letter-spacing:.8px; font-size:20px;}
     .popout__close{
       border:1px solid var(--border);
-      background:linear-gradient(180deg, rgba(122,92,54,.22), rgba(122,92,54,.10));
-      color:var(--fg); border-radius:10px; padding:6px 10px; cursor:pointer; line-height:1;
+      background:var(--panel);
+      color:var(--fg); border-radius:8px; padding:6px 10px; cursor:pointer; line-height:1;
+      transition: background .15s, border-color .15s;
     }
+    .popout__close:hover{ background:var(--panel-soft); border-color:var(--muted); }
     .hud{
       display:flex; gap:12px; align-items:center; justify-content:center;
       padding:8px 10px; border-bottom:1px solid var(--border);
-      background:linear-gradient(180deg, rgba(108,211,154,.10), rgba(122,92,54,.06));
+      background:rgba(52,211,153,.04);
       color:var(--fg);
     }
     .hud .badge{
       border:1px solid var(--border); border-radius:999px; padding:4px 10px;
-      background:rgba(122,92,54,.15)
+      background:rgba(255,255,255,.04); font-size:13px;
     }
     .wrap{display:grid; place-items:center; padding:10px; min-height:0; flex:1}
     canvas{
-      background:#221c16; box-shadow:0 10px 24px rgba(0,0,0,.35);
+      background:#0d1117; box-shadow:0 8px 24px rgba(0,0,0,.4);
       border:1px solid var(--border); border-radius:12px; touch-action:none
     }
     .help{text-align:center; color:var(--muted); margin:8px 0 0}
     .btn{
-      display:inline-block; margin-left:8px; padding:6px 10px; border-radius:10px; color:var(--bg);
-      background:linear-gradient(180deg, #7ee2ac, #6cd39a); border:1px solid #61be8c;
-      text-decoration:none; font-weight:600
+      display:inline-block; margin-left:8px; padding:6px 12px; border-radius:8px; color:#052e16;
+      background:var(--accent); border:1px solid #059669;
+      text-decoration:none; font-weight:600; font-size:13px; cursor:pointer;
+      transition: filter .15s;
     }
+    .btn:hover{ filter: brightness(1.1); }
   </style>
 </head>
 <body>
@@ -86,11 +93,11 @@
     const BRICK_H = 18, BRICK_GUTTER = 5, BRICK_TOP = 40, BRICK_LEFT = 20;
 
     // Colors
-    const COLOR_BRICK = '#7a5c36';
-    const COLOR_BRICK_EDGE = '#8a6a44';
-    const COLOR_ACCENT = '#6cd39a';
-    const COLOR_BALL = '#bfead1';
-    const COLOR_TEXT = '#efe9df';
+    const COLOR_BRICK = '#3f3f46';
+    const COLOR_BRICK_EDGE = '#52525b';
+    const COLOR_ACCENT = '#34d399';
+    const COLOR_BALL = '#a7f3d0';
+    const COLOR_TEXT = '#f4f4f5';
 
     // Derived helpers
     function brickWidth(){ return (canvas.width - 40) / COLS; }
@@ -309,8 +316,8 @@
     // --- Rendering ---
     function drawBackground(){
       const g = ctx.createRadialGradient(canvas.width*0.7, canvas.height*0.3, 10, canvas.width*0.7, canvas.height*0.3, canvas.width*0.9);
-      g.addColorStop(0, '#241e18');
-      g.addColorStop(1, '#1a1511');
+      g.addColorStop(0, '#0d1117');
+      g.addColorStop(1, '#09090b');
       ctx.fillStyle = g;
       ctx.fillRect(0,0,canvas.width,canvas.height);
     }

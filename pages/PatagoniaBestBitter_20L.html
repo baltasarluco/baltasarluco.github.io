@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Patagonia Best Bitter | 20L Recipe</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --amber: #C8791A;
+    --amber-light: #E8A84A;
+    --amber-dark: #8B4F0A;
+    --cream: #FAF3E0;
+    --cream-dark: #F0E6C8;
+    --brown: #3D1F00;
+    --brown-mid: #6B3A10;
+    --text: #2A1500;
+    --muted: #7A5C3A;
+    --border: #D4A96A;
+    --white: #FFFDF7;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* HERO */
+  .hero {
+    background: var(--brown);
+    background-image: 
+      radial-gradient(ellipse at 20% 50%, rgba(200,121,26,0.25) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(139,79,10,0.3) 0%, transparent 50%);
+    color: var(--cream);
+    padding: 48px 40px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '🍺';
+    position: absolute;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 100px;
+    opacity: 0.12;
+  }
+
+  .hero-badge {
+    display: inline-block;
+    background: var(--amber);
+    color: var(--white);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 2px;
+    margin-bottom: 16px;
+  }
+
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 900;
+    line-height: 1.1;
+    color: var(--cream);
+    margin-bottom: 8px;
+  }
+
+  .hero h1 span {
+    color: var(--amber-light);
+  }
+
+  .hero-sub {
+    font-size: 14px;
+    color: rgba(250,243,224,0.6);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 1px;
+    margin-bottom: 32px;
+  }
+
+  .award {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(200,121,26,0.2);
+    border: 1px solid rgba(200,121,26,0.4);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--amber-light);
+  }
+
+  /* STATS BAR */
+  .stats-bar {
+    background: var(--amber);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+  }
+
+  .stat {
+    flex: 1;
+    min-width: 120px;
+    padding: 16px 20px;
+    border-right: 1px solid rgba(255,255,255,0.2);
+    text-align: center;
+  }
+
+  .stat:last-child { border-right: none; }
+
+  .stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(255,253,247,0.7);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .stat-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--white);
+    display: block;
+  }
+
+  /* MAIN LAYOUT */
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 20px;
+  }
+
+  /* SECTIONS */
+  .section {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .section-header {
+    background: var(--cream-dark);
+    border-bottom: 2px solid var(--amber);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--brown);
+  }
+
+  .section-icon {
+    width: 28px;
+    height: 28px;
+    background: var(--amber);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  /* TABLES */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead th {
+    background: var(--cream-dark);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 10px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr:nth-child(even) { background: #FFFBF2; }
+  tbody tr:nth-child(odd) { background: var(--white); }
+
+  tbody td {
+    padding: 10px 16px;
+    border-bottom: 1px solid #EDE0C8;
+    color: var(--text);
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+
+  .sub-tag {
+    display: inline-block;
+    background: #FFF3DC;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    color: var(--amber-dark);
+    padding: 1px 6px;
+    margin-left: 6px;
+  }
+
+  .pct {
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    color: var(--amber-dark);
+  }
+
+  /* COLOR SWATCH */
+  .color-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+    border: 1px solid rgba(0,0,0,0.1);
+  }
+
+  /* MASH STEPS */
+  .mash-steps {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .mash-step {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--cream-dark);
+    border-left: 4px solid var(--amber);
+    padding: 14px 16px;
+    border-radius: 0 4px 4px 0;
+  }
+
+  .step-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--amber);
+    min-width: 32px;
+  }
+
+  .step-info { flex: 1; }
+
+  .step-title {
+    font-weight: 500;
+    color: var(--brown);
+    margin-bottom: 2px;
+  }
+
+  .step-detail {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .step-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    background: var(--amber);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  /* WATER */
+  .water-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    padding: 20px;
+  }
+
+  .water-item {
+    background: var(--cream-dark);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px;
+    text-align: center;
+  }
+
+  .water-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .water-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--brown);
+  }
+
+  .water-unit {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* NOTES */
+  .notes-box {
+    padding: 20px;
+  }
+
+  .note-item {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+
+  .note-item:last-child { border-bottom: none; }
+
+  .note-icon { font-size: 18px; min-width: 24px; }
+
+  .note-text {
+    font-size: 13px;
+    color: var(--brown-mid);
+    line-height: 1.6;
+  }
+
+  .note-text strong { color: var(--brown); }
+
+  /* PROFILE */
+  .profile-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0;
+    padding: 16px;
+  }
+
+  .profile-item {
+    text-align: center;
+    padding: 12px 8px;
+    border-right: 1px solid var(--border);
+  }
+
+  .profile-item:last-child { border-right: none; }
+
+  .profile-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .profile-value {
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--brown);
+  }
+
+  /* FOOTER */
+  .footer {
+    text-align: center;
+    padding: 24px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+  }
+
+  /* IBU pill */
+  .ibu-pill {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    background: var(--cream-dark);
+    border: 1px solid var(--border);
+    color: var(--brown-mid);
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+
+  .back-btn {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 1000;
+    background: var(--brown);
+    color: var(--cream);
+    border: none;
+    border-radius: 20px;
+    padding: 8px 18px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    transition: background 0.2s;
+  }
+  .back-btn:hover { background: var(--brown-mid); }
+
+  .lang-toggle {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 1000;
+    background: var(--amber);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 18px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    transition: background 0.2s;
+  }
+  .lang-toggle:hover { background: var(--amber-dark); }
+
+  @media (max-width: 600px) {
+    .stats-bar { flex-direction: column; }
+    .stat { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.2); }
+    .profile-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<a href="../index.html" class="back-btn">← Back</a>
+<button class="lang-toggle" onclick="toggleLang()" id="langBtn">🌐 Español</button>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge" data-en="English Pale Ale · 20 Litres · All Grain" data-es="English Pale Ale · 20 Litros · All Grain">English Pale Ale · 20 Litres · All Grain</div>
+  <h1>Patagonia<br/><span>Best Bitter</span></h1>
+  <a href="https://www.brewersfriend.com/homebrew/recipe/view/965105/r005-2020-english-pale-ale-nottingham" target="_blank" class="award" style="text-decoration:none; cursor:pointer;">⭐ <span data-en="Base Recipe" data-es="Receta base">Base Recipe</span></a>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat">
+    <span class="stat-label" data-en="Est. OG" data-es="OG estimada">Est. OG</span>
+    <span class="stat-value">1.043</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label" data-en="Est. FG" data-es="FG estimada">Est. FG</span>
+    <span class="stat-value">1.008</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label" data-en="Est. ABV" data-es="ABV estimado">Est. ABV</span>
+    <span class="stat-value">4.5%</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label" data-en="Est. IBU" data-es="IBU estimado">Est. IBU</span>
+    <span class="stat-value">~24</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label" data-en="Est. SRM" data-es="SRM estimado">Est. SRM</span>
+    <span class="stat-value">~8.1</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label" data-en="Mash pH" data-es="pH Mash">Mash pH</span>
+    <span class="stat-value">5.35</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label" data-en="Batch Size" data-es="Volumen">Batch Size</span>
+    <span class="stat-value">23.9 L</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- FERMENTABLES -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon">🌾</div>
+      <h2 data-en="Fermentables" data-es="Fermentables">Fermentables</h2>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th data-en="Amount" data-es="Cantidad">Amount</th>
+          <th data-en="Malt" data-es="Malta">Malt</th>
+          <th>PPG</th>
+          <th>°L</th>
+          <th data-en="Bill %" data-es="Bill %">Bill %</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>3.50 kg</strong></td>
+          <td>
+            <span class="color-dot" style="background:#F5E6B0;"></span>
+            Extra Pale Patagonia Malt
+          </td>
+          <td>33</td>
+          <td>1.6–2.0</td>
+          <td class="pct">78.7%</td>
+        </tr>
+        <tr>
+          <td><strong>0.31 kg</strong></td>
+          <td>
+            <span class="color-dot" style="background:#C87A30;"></span>
+            Biscuit Castle Malting<br/>
+            <small style="color:var(--muted); font-size:11px;" data-en="+ Caramel Amber BestMalz (recommended blend: 0.18kg + 0.13kg)" data-es="+ Malta Caramel Amber BestMalz (mezcla recomendada: 0.18kg + 0.13kg)">+ Caramel Amber BestMalz (recommended blend: 0.18kg + 0.13kg)</small>
+          </td>
+          <td>32</td>
+          <td>25–28</td>
+          <td class="pct">7.0%</td>
+        </tr>
+        <tr>
+          <td><strong>0.25 kg</strong></td>
+          <td>
+            <span class="color-dot" style="background:#D4933A;"></span>
+            Munich Patagonia Malt
+          </td>
+          <td>37</td>
+          <td>2.6–3.2</td>
+          <td class="pct">5.6%</td>
+        </tr>
+        <tr>
+          <td><strong>0.19 kg</strong></td>
+          <td>
+            <span class="color-dot" style="background:#B06020;"></span>
+            Melanoidin Patagonia Malt
+          </td>
+          <td>37</td>
+          <td>15–25</td>
+          <td class="pct">4.3%</td>
+        </tr>
+        <tr>
+          <td><strong>125 g</strong></td>
+          <td>
+            <span class="color-dot" style="background:#2A1000;"></span>
+            Chocolate Castle Malting
+          </td>
+          <td>34</td>
+          <td>340–410</td>
+          <td class="pct">2.8%</td>
+        </tr>
+        <tr>
+          <td><strong>25 g</strong></td>
+          <td>
+            <span class="color-dot" style="background:#1A0A00;"></span>
+            Carafa II Weyermann
+          </td>
+          <td>28</td>
+          <td>400–450</td>
+          <td class="pct">0.6%</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- HOPS -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon">🌿</div>
+      <h2 data-en="Hops" data-es="Lúpulos">Hops</h2>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th data-en="Amount" data-es="Cantidad">Amount</th>
+          <th data-en="Variety" data-es="Variedad">Variety</th>
+          <th>AA%</th>
+          <th data-en="Use" data-es="Uso">Use</th>
+          <th data-en="Time" data-es="Tiempo">Time</th>
+          <th>IBU</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>16 g</strong></td>
+          <td>Kent Golding</td>
+          <td>5.3%</td>
+          <td data-en="Boil" data-es="Hervor">Boil</td>
+          <td>60 min</td>
+          <td><span class="ibu-pill">~15.9</span></td>
+        </tr>
+        <tr>
+          <td><strong>12.5 g</strong></td>
+          <td>Cascade</td>
+          <td>6.9%</td>
+          <td data-en="Boil" data-es="Hervor">Boil</td>
+          <td>30 min</td>
+          <td><span class="ibu-pill">~9.1</span></td>
+        </tr>
+        <tr>
+          <td><strong>12.5 g</strong></td>
+          <td>Fuggles</td>
+          <td>4.5%</td>
+          <td data-en="Boil" data-es="Hervor">Boil</td>
+          <td>5 min</td>
+          <td><span class="ibu-pill">~1.7</span></td>
+        </tr>
+        <tr>
+          <td><strong>37.5 g</strong></td>
+          <td>Hallertau Mittelfrüh</td>
+          <td>5.4%</td>
+          <td>Dry Hop</td>
+          <td>4 <span data-en="days" data-es="días">days</span></td>
+          <td>—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- OTHER INGREDIENTS -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon">🧪</div>
+      <h2 data-en="Other Ingredients" data-es="Otros Ingredientes">Other Ingredients</h2>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th data-en="Amount" data-es="Cantidad">Amount</th>
+          <th data-en="Ingredient" data-es="Ingrediente">Ingredient</th>
+          <th data-en="Use" data-es="Uso">Use</th>
+          <th data-en="When" data-es="Momento">When</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>2 g</strong></td>
+          <td>Irish Moss Rama</td>
+          <td data-en="Fining" data-es="Clarificante">Fining</td>
+          <td data-en="10 min before end of boil" data-es="10 min antes del final del hervor">10 min before end of boil</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- YEAST -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon">🦠</div>
+      <h2 data-en="Yeast" data-es="Levadura">Yeast</h2>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th data-en="Product" data-es="Producto">Product</th>
+          <th data-en="Attenuation" data-es="Atenuación">Attenuation</th>
+          <th data-en="Flocculation" data-es="Floculación">Flocculation</th>
+          <th data-en="Fermentation Temp." data-es="Temp. Fermentación">Fermentation Temp.</th>
+          <th data-en="Tolerance" data-es="Tolerancia">Tolerance</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Nottingham Yeast</strong> (1 <span data-en="packet" data-es="sobre">packet</span>)</td>
+          <td>78–84%</td>
+          <td data-en="High" data-es="Alta">High</td>
+          <td><strong>14–18°C</strong></td>
+          <td>14% ABV</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- WATER -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon">💧</div>
+      <h2 data-en="Water Requirements (~24 L batch)" data-es="Requerimientos de Agua (~24 L batch)">Water Requirements (~24 L batch)</h2>
+    </div>
+    <div class="water-grid">
+      <div class="water-item">
+        <span class="water-label" data-en="Mash Water" data-es="Agua Maceración">Mash Water</span>
+        <span class="water-value">20 <span class="water-unit">L</span></span>
+      </div>
+      <div class="water-item">
+        <span class="water-label" data-en="Sparge Water" data-es="Agua Aspersión">Sparge Water</span>
+        <span class="water-value">16 <span class="water-unit">L</span></span>
+      </div>
+      <div class="water-item">
+        <span class="water-label" data-en="Total Water" data-es="Total Agua">Total Water</span>
+        <span class="water-value">36 <span class="water-unit">L</span></span>
+      </div>
+      <div class="water-item">
+        <span class="water-label" data-en="Pre-Boil Vol." data-es="Pre-Boil Vol.">Pre-Boil Vol.</span>
+        <span class="water-value">~31.4 <span class="water-unit">L</span></span>
+      </div>
+      <div class="water-item">
+        <span class="water-label" data-en="Post-Boil Vol." data-es="Post-Boil Vol.">Post-Boil Vol.</span>
+        <span class="water-value">~24.4 <span class="water-unit">L</span></span>
+      </div>
+      <div class="water-item">
+        <span class="water-label" data-en="Fermenter" data-es="Fermentador">Fermenter</span>
+        <span class="water-value">~23.9 <span class="water-unit">L</span></span>
+      </div>
+    </div>
+    <div style="padding: 0 20px 16px;">
+      <p style="font-size:12px; color:var(--muted); font-family:'DM Mono',monospace;">
+        <span data-en="Base water: Cachantún" data-es="Agua base: Cachantún">Base water: Cachantún</span> · Ca²⁺ 11 · Mg²⁺ 4 · Na⁺ 12 · Cl⁻ 23 · SO₄²⁻ 42 · HCO₃⁻ 141 (ppm)<br/>
+        <span data-en="Boil 36L for 10–15 min and let rest until cool before use." data-es="Hervir 36L por 10–15 min y dejar reposar hasta enfriar antes de usar.">Boil 36L for 10–15 min and let rest until cool before use.</span>
+      </p>
+    </div>
+  </div>
+
+  <!-- MASH -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon">🌡️</div>
+      <h2 data-en="Mash — Single Infusion" data-es="Maceración — Infusión Simple">Mash — Single Infusion</h2>
+    </div>
+    <div class="mash-steps">
+      <div class="mash-step">
+        <div class="step-num">1</div>
+        <div class="step-info">
+          <div class="step-title" data-en="Strike Water" data-es="Agua de maceración (Strike Water)">Strike Water</div>
+          <div class="step-detail" data-en="20 L · Heat to 70°C → target temp 67°C in mash tun" data-es="20 L · Calentar a 70°C → temperatura objetivo 67°C en macerador">20 L · Heat to 70°C → target temp 67°C in mash tun</div>
+        </div>
+        <div class="step-badge">20 L</div>
+      </div>
+      <div class="mash-step">
+        <div class="step-num">2</div>
+        <div class="step-info">
+          <div class="step-title" data-en="Mash — Single Infusion" data-es="Maceración — Infusión simple">Mash — Single Infusion</div>
+          <div class="step-detail" data-en="Add grains · Hold 67°C · Single infusion" data-es="Agregar granos · Mantener 67°C · Infusión única">Add grains · Hold 67°C · Single infusion</div>
+        </div>
+        <div class="step-badge">90 min · 67°C</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VORLAUF -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon">🔄</div>
+      <h2>Vorlauf</h2>
+    </div>
+    <div class="mash-steps">
+      <div class="mash-step">
+        <div class="step-num">1</div>
+        <div class="step-info">
+          <div class="step-title" data-en="Pump Recirculation" data-es="Recirculación con bomba">Pump Recirculation</div>
+          <div class="step-detail" data-en="Open bottom valve · Activate pump · Return wort to top of grain bed · Slow flow to avoid disturbing the bed · Repeat until wort runs clear and particle-free" data-es="Abrir canilla inferior · Activar bomba · Retornar mosto por arriba del lecho · Flujo lento para no romper el lecho · Repetir hasta que el mosto salga claro y sin partículas">Open bottom valve · Activate pump · Return wort to top of grain bed · Slow flow to avoid disturbing the bed · Repeat until wort runs clear and particle-free</div>
+        </div>
+        <div class="step-badge">5–8 min</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SPARGE -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon">🚿</div>
+      <h2 data-en="Fly Sparge" data-es="Aspersión / Fly Sparge">Fly Sparge</h2>
+    </div>
+    <div class="mash-steps">
+      <div class="mash-step">
+        <div class="step-num">1</div>
+        <div class="step-info">
+          <div class="step-title" data-en="Fly Sparge" data-es="Fly Sparge">Fly Sparge</div>
+          <div class="step-detail" data-en="Water at 80°C · Add over grain bed with sprinkler or watering can · Open bottom valve to kettle at same rate · Maintain constant water level over grain bed · Do not let it dry out or flood" data-es="Agua a 80°C · Agregar por arriba del lecho con aspersor o regadera · Abrir canilla inferior hacia hervidor al mismo ritmo · Mantener nivel de agua constante sobre el lecho · No dejar secar ni inundar">Water at 80°C · Add over grain bed with sprinkler · Open bottom valve to kettle at same rate · Maintain constant water level · Do not let it dry out or flood</div>
+        </div>
+        <div class="step-badge">16 L · 20 min</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOIL -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon">🔥</div>
+      <h2 data-en="Boil, Whirlpool & Chill" data-es="Ebullición, Whirlpool y Enfriado">Boil, Whirlpool & Chill</h2>
+    </div>
+    <div class="mash-steps">
+      <div class="mash-step">
+        <div class="step-num">1</div>
+        <div class="step-info">
+          <div class="step-title" data-en="Boil" data-es="Ebullición">Boil</div>
+          <div class="step-detail" data-en="Bring to vigorous boil · Add hops per schedule · Irish Moss at 10 min from end" data-es="Llevar a hervor vigoroso · Agregar lúpulos según programa · Irish Moss a 10 min del final">Bring to vigorous boil · Add hops per schedule · Irish Moss at 10 min from end</div>
+        </div>
+        <div class="step-badge">90 min</div>
+      </div>
+      <div class="mash-step">
+        <div class="step-num">2</div>
+        <div class="step-info">
+          <div class="step-title" data-en="Whirlpool" data-es="Whirlpool">Whirlpool</div>
+          <div class="step-detail" data-en="Turn off heat · Stir wort in circles until a vortex forms · Trub and hops collect at center of kettle" data-es="Apagar el fuego · Agitar el mosto en círculos hasta crear un remolino · El trub y lúpulo se acumulan en el centro de la olla">Turn off heat · Stir wort in circles until a vortex forms · Trub and hops collect at center of kettle</div>
+        </div>
+        <div class="step-badge">10 min</div>
+      </div>
+      <div class="mash-step">
+        <div class="step-num">3</div>
+        <div class="step-info">
+          <div class="step-title" data-en="Settling" data-es="Asentamiento">Settling</div>
+          <div class="step-detail" data-en="Do not move the kettle · Let rest completely · Trub cone forms and consolidates at center" data-es="No mover la olla · Dejar reposar completamente · El cono de trub se forma y consolida en el centro">Do not move the kettle · Let rest completely · Trub cone forms and consolidates at center</div>
+        </div>
+        <div class="step-badge">20 min</div>
+      </div>
+      <div class="mash-step">
+        <div class="step-num">4</div>
+        <div class="step-info">
+          <div class="step-title" data-en="Chill with immersion chiller" data-es="Enfriado con serpentín">Chill with immersion chiller</div>
+          <div class="step-detail" data-en="Submerge chiller coil in kettle · Run cold water through · Chill to 18–20°C · Transfer to fermenter avoiding trub at center" data-es="Sumergir serpentín en la olla · Hacer circular agua fría · Enfriar hasta 18–20°C · Trasvasar al fermentador evitando el trub del centro">Submerge chiller coil in kettle · Run cold water through · Chill to 18–20°C · Transfer to fermenter avoiding trub at center</div>
+        </div>
+        <div class="step-badge">18–20°C</div>
+      </div>
+      <div class="mash-step">
+        <div class="step-num">5</div>
+        <div class="step-info">
+          <div class="step-title" data-en="Pitch Yeast" data-es="Agregar levadura">Pitch Yeast</div>
+          <div class="step-detail" data-en="Verify wort temperature 18–20°C · Sprinkle Nottingham packet directly onto wort (dry pitch) · Do not stir · Close fermenter and attach airlock · Note: if OG > 1.080, rehydrate yeast before pitching" data-es="Verificar temperatura del mosto entre 18–20°C · Espolvorear el sobre de Nottingham directamente sobre el mosto (dry pitch) · No revolver · Cerrar fermentador y colocar airlock · Nota: si OG > 1.080, hidratar levadura antes de agregar">Verify wort temperature 18–20°C · Sprinkle Nottingham packet directly onto wort (dry pitch) · Do not stir · Close fermenter and attach airlock · Note: if OG > 1.080, rehydrate yeast before pitching</div>
+        </div>
+        <div class="step-badge">Dry pitch</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FERMENTATION -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon">🧫</div>
+      <h2 data-en="Fermentation — Total ~10 days" data-es="Fermentación — Total ~10 días">Fermentation — Total ~10 days</h2>
+    </div>
+    <div class="mash-steps">
+      <div class="mash-step">
+        <div class="step-num">1</div>
+        <div class="step-info">
+          <div class="step-title" data-en="Primary Fermentation" data-es="Fermentación primaria">Primary Fermentation</div>
+          <div class="step-detail" data-en="Ideal ambient temperature 14–18°C · Airlock bubbling actively · Do not move fermenter" data-es="Temperatura ambiente ideal 14–18°C · Airlock burbujea activamente · No mover el fermentador">Ideal ambient temperature 14–18°C · Airlock bubbling actively · Do not move fermenter</div>
+        </div>
+        <div class="step-badge" data-en="Days 1–4" data-es="Días 1–4">Days 1–4</div>
+      </div>
+      <div class="mash-step">
+        <div class="step-num">2</div>
+        <div class="step-info">
+          <div class="step-title" data-en="Dry Hop in bag" data-es="Dry Hop en bolsa">Dry Hop in bag</div>
+          <div class="step-detail" data-en="When airlock barely bubbles · Place 37.5g Hallertau Mittelfrüh in sanitised bag · Submerge in fermenter · Do not stir" data-es="Cuando el airlock casi no burbujea · Colocar 37.5g Hallertau Mittelfrüh en bolsa sanitizada · Sumergir en el fermentador · Sin agitar">When airlock barely bubbles · Place 37.5g Hallertau Mittelfrüh in sanitised bag · Submerge in fermenter · Do not stir</div>
+        </div>
+        <div class="step-badge" data-en="Days 4–8" data-es="Días 4–8">Days 4–8</div>
+      </div>
+      <div class="mash-step">
+        <div class="step-num">3</div>
+        <div class="step-info">
+          <div class="step-title" data-en="Remove bag + Transfer" data-es="Retirar bolsa + Cambio de fermentador">Remove bag + Transfer</div>
+          <div class="step-detail" data-en="Remove hop bag · Transfer gently to a clean sanitised secondary fermenter · Leave yeast sediment behind" data-es="Retirar bolsa de lúpulo · Trasvasar suavemente a un segundo fermentador limpio y sanitizado · Dejar el sedimento de levadura atrás">Remove hop bag · Transfer gently to a clean sanitised secondary fermenter · Leave yeast sediment behind</div>
+        </div>
+        <div class="step-badge" data-en="Day ~8" data-es="Día ~8">Day ~8</div>
+      </div>
+      <div class="mash-step">
+        <div class="step-num">4</div>
+        <div class="step-info">
+          <div class="step-title" data-en="Post-transfer rest" data-es="Reposo post trasvase">Post-transfer rest</div>
+          <div class="step-detail" data-en="Do not move fermenter · Beer clarifies and carried-over trub settles" data-es="Sin mover el fermentador · La cerveza se aclara y sedimenta el trub arrastrado">Do not move fermenter · Beer clarifies and carried-over trub settles</div>
+        </div>
+        <div class="step-badge" data-en="Days 8–10" data-es="Días 8–10">Days 8–10</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTLING & CARBONATION -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon">🍾</div>
+      <h2 data-en="Bottling & Carbonation — Total ~14 days" data-es="Embotellado y Carbonatación — Total ~14 días">Bottling & Carbonation — Total ~14 days</h2>
+    </div>
+    <div class="mash-steps">
+      <div class="mash-step">
+        <div class="step-num">1</div>
+        <div class="step-info">
+          <div class="step-title" data-en="Prepare priming solution" data-es="Preparar solución de priming">Prepare priming solution</div>
+          <div class="step-detail" data-en="Dextrose: 4 g/L · Dissolve in 300ml of boiled water · Let cool to room temperature before adding · Target: ~2.71 volumes CO₂" data-es="Dextrosa: 4 g/L · Disolver en 300ml de agua hervida · Dejar enfriar a temperatura ambiente antes de agregar · Objetivo: ~2.71 volúmenes CO₂">Dextrose: 4 g/L · Dissolve in 300ml of boiled water · Let cool to room temperature before adding · Target: ~2.71 volumes CO₂</div>
+        </div>
+        <div class="step-badge">4 g/L dextrose</div>
+      </div>
+      <div class="mash-step">
+        <div class="step-num">2</div>
+        <div class="step-info">
+          <div class="step-title" data-en="Bottle" data-es="Embotellar">Bottle</div>
+          <div class="step-detail" data-en="Add dissolved solution to bottom of bucket before transferring beer · Mix gently without oxidising · Fill bottles leaving 3–4cm headspace · Seal well" data-es="Agregar solución disuelta al fondo del balde antes de trasvasar la cerveza · Mezclar suavemente sin oxidar · Llenar botellas dejando 3–4cm de espacio · Sellar bien">Add dissolved solution to bottom of bucket before transferring beer · Mix gently without oxidising · Fill bottles leaving 3–4cm headspace · Seal well</div>
+        </div>
+        <div class="step-badge" data-en="Day ~10" data-es="Día ~10">Day ~10</div>
+      </div>
+      <div class="mash-step">
+        <div class="step-num">3</div>
+        <div class="step-info">
+          <div class="step-title" data-en="Bottle conditioning" data-es="Carbonatación en botella">Bottle conditioning</div>
+          <div class="step-detail" data-en="Keep bottles at room temperature (18–22°C) · Gently invert at day 3 to redistribute yeast · Avoid direct light and vibrations" data-es="Mantener botellas a temperatura ambiente (18–22°C) · Voltear suavemente a los 3 días para redistribuir levadura · Evitar luz directa y vibraciones">Keep bottles at room temperature (18–22°C) · Gently invert at day 3 to redistribute yeast · Avoid direct light and vibrations</div>
+        </div>
+        <div class="step-badge">10–14 <span data-en="days" data-es="días">days</span></div>
+      </div>
+      <div class="mash-step">
+        <div class="step-num">4</div>
+        <div class="step-info">
+          <div class="step-title" data-en="Ready to drink 🍺" data-es="Lista para beber 🍺">Ready to drink 🍺</div>
+          <div class="step-detail" data-en="Refrigerate 24h before opening · Serve at 8–12°C · Pour gently to avoid disturbing sediment" data-es="Refrigerar 24h antes de abrir · Servir a 8–12°C · Decantar suavemente para no levantar sedimento">Refrigerate 24h before opening · Serve at 8–12°C · Pour gently to avoid disturbing sediment</div>
+        </div>
+        <div class="step-badge" data-en="Day ~24" data-es="Día ~24">Day ~24</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Patagonia Best Bitter · Based on R005/2020 · Scaled to 20L · Local Chilean ingredients · 2026
+  </div>
+
+</div>
+
+<script>
+  let currentLang = 'en';
+
+  function toggleLang() {
+    currentLang = currentLang === 'en' ? 'es' : 'en';
+    const btn = document.getElementById('langBtn');
+    btn.textContent = currentLang === 'en' ? '🌐 Español' : '🌐 English';
+    document.querySelectorAll('[data-en]').forEach(el => {
+      el.textContent = el.getAttribute('data-' + currentLang);
+    });
+  }
+</script>
+
+</body>
+</html>

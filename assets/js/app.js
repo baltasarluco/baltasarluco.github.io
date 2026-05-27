@@ -18,6 +18,29 @@ if (toggle && nav) {
   }));
 }
 
+// Tools dropdown
+const toolsDropdown = document.getElementById('tools-dropdown');
+const toolsToggle   = toolsDropdown && toolsDropdown.querySelector('.nav__dropdown-toggle');
+if (toolsDropdown && toolsToggle) {
+  toolsToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = toolsDropdown.classList.toggle('is-open');
+    toolsToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  // Close when clicking outside
+  document.addEventListener('click', () => {
+    toolsDropdown.classList.remove('is-open');
+    toolsToggle.setAttribute('aria-expanded', 'false');
+  });
+  // Close when a menu item is clicked
+  toolsDropdown.querySelectorAll('.nav__dropdown-item:not(.nav__dropdown-item--disabled)').forEach(item => {
+    item.addEventListener('click', () => {
+      toolsDropdown.classList.remove('is-open');
+      toolsToggle.setAttribute('aria-expanded', 'false');
+    });
+  });
+}
+
 // ===== Cross-fade router with queuing & click lock =====
 const links = Array.from(document.querySelectorAll('.nav__link')).filter(a => a.dataset.navto);
 const sections = Array.from(document.querySelectorAll('[data-section]'));

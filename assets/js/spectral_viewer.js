@@ -842,8 +842,13 @@ function checkCardsForOverflow(){
         let colOffset = 0;
 
         for(const col of columns){
-          const value = col.readFunc(view, rowOffset + colOffset, col.repeat);
-          columnData[col.name].push(value);
+          if(col.repeat > 1 && col.columnType === 'numeric'){
+            for(let r = 0; r < col.repeat; r++){
+              columnData[col.name].push(col.readFunc(view, rowOffset + colOffset + r * col.bytesPerElement));
+            }
+          } else {
+            columnData[col.name].push(col.readFunc(view, rowOffset + colOffset, col.repeat));
+          }
           colOffset += col.repeat * col.bytesPerElement;
         }
       }
