@@ -1031,20 +1031,23 @@ section[data-section="research"] [data-reveal]{
 
 #proj-3i.card--split{
   display: grid;
-  grid-template-columns: minmax(320px, 1fr) auto;
-  align-items: stretch;
+  grid-template-columns: 1fr;
   gap: 20px;
 }
 
 #proj-3i .card__media{
-  height: 100%;
+  width: 100%;
+  height: auto;
+  margin: 0;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   border: 1px solid var(--border);
   border-radius: 10px;
   box-shadow: var(--img-shadow);
+}
+#proj-3i .card__media picture{
+  display: block;
+  width: 100%;
 }
 #proj-3i .card__media img{
   width: 100%;
@@ -1207,6 +1210,12 @@ section[data-section="research"] [data-reveal]{
   margin: 0;
   color: var(--fg2);
   opacity: 0.82;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .pub-links{
