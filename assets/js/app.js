@@ -8,14 +8,14 @@ document.addEventListener('DOMContentLoaded', () => {
 const nav = document.querySelector('[data-nav]');
 const toggle = document.querySelector('.nav-toggle');
 if (toggle && nav) {
-  toggle.addEventListener('click', () => {
-    const open = nav.classList.toggle('is-open');
+  const setOpen = (open) => {
+    nav.classList.toggle('is-open', open);
     toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-  });
-  nav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
-    nav.classList.remove('is-open');
-    toggle.setAttribute('aria-expanded', 'false');
-  }));
+    toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  };
+  toggle.addEventListener('click', () => setOpen(!nav.classList.contains('is-open')));
+  nav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setOpen(false)));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && nav.classList.contains('is-open')) setOpen(false); });
 }
 
 // Tools dropdown
@@ -143,40 +143,6 @@ function queueViewportFadeUpdate(){
   });
 }
 
-const wheelClampHandler = (event) => {
-  if (clampPageScroll(event.deltaY, event.target)){
-    event.preventDefault();
-    queueViewportFadeUpdate();
-  }
-};
-
-window.addEventListener('wheel', wheelClampHandler, { passive: false });
-
-let lastTouchY = null;
-
-window.addEventListener('touchstart', (event) => {
-  if (event.touches.length === 1){
-    lastTouchY = event.touches[0].clientY;
-  } else {
-    lastTouchY = null;
-  }
-}, { passive: true });
-
-window.addEventListener('touchmove', (event) => {
-  if (lastTouchY === null || event.touches.length !== 1) return;
-  const currentY = event.touches[0].clientY;
-  const delta = lastTouchY - currentY;
-  if (clampPageScroll(delta, event.target)){
-    event.preventDefault();
-    queueViewportFadeUpdate();
-  }
-  lastTouchY = currentY;
-}, { passive: false });
-
-const resetTouchClamp = () => { lastTouchY = null; };
-window.addEventListener('touchend', resetTouchClamp, { passive: true });
-window.addEventListener('touchcancel', resetTouchClamp, { passive: true });
-
 function enableViewportFades(){
   if (viewportFadesEnabled) return;
   if (!ensureViewportFades()) return;
@@ -249,6 +215,7 @@ function showSection(id, push = true){
 
   const fadeInTarget = () => {
     target.classList.remove('is-hidden');
+    document.dispatchEvent(new CustomEvent('section:show', { detail: target }));
     target.classList.add('is-enter');
     void target.offsetWidth;
     target.classList.add('is-visible');
@@ -318,6 +285,7 @@ function forceShowSection(id) {
   });
   currentId = id;
   setActiveLink(id);
+  document.dispatchEvent(new CustomEvent('section:show', { detail: map.get(id) }));
 }
 
 window.addEventListener('pageshow', (e) => {
@@ -396,69 +364,89 @@ document.querySelectorAll('a[href$="viewer.html"]').forEach(a => {
   });
 });
 
+// ============================================================
+// Scroll effects: staggered card reveals, parallax sky, trails that
+// turn with the scroll. All disabled under prefers-reduced-motion.
+// ============================================================
 (function(){
-  let started = false;
-  let active = new Set();
-  let ticking = false;
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  function visFor(el){
-    const r = el.getBoundingClientRect();
-    const vh = window.innerHeight || document.documentElement.clientHeight;
-    const c = r.top + r.height/2;
+  // --- reveals ---
+  const targets = Array.from(document.querySelectorAll('.hero, .section .card'));
+  if (!reduce && 'IntersectionObserver' in window && targets.length){
+    // stagger index within each section (capped so late cards don't lag)
+    sections.forEach(sec => {
+      Array.from(sec.querySelectorAll('.hero, .card')).forEach((el, i) => {
+        el.style.setProperty('--i', String(Math.min(i, 8)));
+      });
+    });
+    targets.forEach(el => el.classList.add('reveal'));
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting){
+          const el = e.target;
+          fadeOne(el);
+          el.classList.add('is-in');
+          io.unobserve(el);
+          // hand over to the scroll-linked mode once the cascade step has finished
+          const delay = (parseFloat(getComputedStyle(el).transitionDelay) || 0) * 1000;
+          clearTimeout(el._liveT);
+          el._liveT = setTimeout(() => { el.classList.add('is-live'); scrollFade(); }, delay + 850);
+        }
+      });
+    }, { root: null, rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+    targets.forEach(el => io.observe(el));
 
-    const top0 = vh * 0.18, top1 = vh * 0.38;
-    const bot1 = vh * 0.62, bot0 = vh * 0.82;
-
-    if (c <= top0 || c >= bot0) return 0;
-    if (c <  top1) return (c - top0) / (top1 - top0);
-    if (c <= bot1) return 1;
-    return 1 - (c - bot1) / (bot0 - bot1);
-  }
-
-  function update(){
-    ticking = false;
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){
-      active.forEach(el => el.style.setProperty('--reveal', '1'));
-      return;
-    }
-    active.forEach(el => {
-      const v = visFor(el);
-      el.style.setProperty('--reveal', v.toFixed(3));
-      if (v > 0.01) el.classList.add('in-view'); else el.classList.remove('in-view');
+    // Re-arm the cascade every time a section is shown, not only the first time.
+    document.addEventListener('section:show', (e) => {
+      const sec = e.detail;
+      if (!sec) return;
+      sec.querySelectorAll('.reveal').forEach(el => {
+        clearTimeout(el._liveT);
+        el.classList.remove('is-in', 'is-live');
+        el.style.removeProperty('--vis');
+        el.style.removeProperty('--dir');
+        io.unobserve(el);
+        io.observe(el);
+      });
     });
   }
 
-  const onScroll = () => {
-    if (!ticking){ ticking = true; requestAnimationFrame(update); }
-  };
-
-  function init(){
-    if (started) return;
-    started = true;
-
-    const items = Array.from(document.querySelectorAll('[data-section="research"] [data-reveal]'));
-    if (!items.length) return;
-
-    const io = new IntersectionObserver((entries)=>{
-      entries.forEach(e => {
-        if (e.isIntersecting) { active.add(e.target); }
-        else { active.delete(e.target); e.target.style.removeProperty('--reveal'); }
-      });
-      onScroll();
-    }, { root: null, rootMargin: '20% 0% 20% 0%', threshold: [0, 0.01, 0.1, 0.5, 1] });
-
-    items.forEach(el => io.observe(el));
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
-    onScroll();
+  // --- scroll-linked card fade: how much of each live card is cut off by the viewport edges ---
+  function fadeOne(el){
+    const vh = window.innerHeight || document.documentElement.clientHeight || 1;
+    const r = el.getBoundingClientRect();
+    if (r.height <= 0) return;
+    const visibleH = Math.min(r.bottom, vh) - Math.max(r.top, 0);
+    const ref = Math.min(r.height, vh * 0.6);
+    let v = Math.max(0, Math.min(1, visibleH / ref));
+    v = v * v * (3 - 2 * v); // smoothstep
+    const dir = (r.top + r.height / 2) < vh / 2 ? -1 : 1;
+    el.style.setProperty('--vis', v.toFixed(3));
+    el.style.setProperty('--dir', String(dir));
+  }
+  function scrollFade(){
+    if (reduce) return;
+    document.querySelectorAll('.reveal.is-live').forEach(fadeOne);
   }
 
-  document.addEventListener('DOMContentLoaded', init);
-  window.addEventListener('hashchange', () => {
-    const id = (location.hash || '').slice(1);
-    if (id === 'research') init();
-  });
+  // --- parallax sky + scroll-driven trail rotation ---
+  const sky = document.querySelector('.sky');
+  const trailsWrap = document.querySelector('.trails-wrap');
+  if (reduce) return;
+  let raf = null;
+  function paint(){
+    raf = null;
+    const y = window.scrollY || window.pageYOffset || 0;
+    if (sky) sky.style.transform = `translate3d(0, ${(-y * 0.14).toFixed(1)}px, 0)`;
+    if (trailsWrap) trailsWrap.style.setProperty('--scroll-rot', `${(y * 0.06).toFixed(2)}deg`);
+    scrollFade();
+  }
+  const onScroll = () => { if (!raf) raf = requestAnimationFrame(paint); };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  window.addEventListener('hashchange', () => setTimeout(onScroll, 50));
+  paint();
 })();
 
 (function(){
@@ -522,54 +510,60 @@ document.querySelectorAll('a[href$="viewer.html"]').forEach(a => {
   window.addEventListener('resize', rerenderVisible);
 })();
 
+// ============================================================
+// Theme toggle (dark is the default; OS preference honoured until chosen)
+// ============================================================
 (function(){
-  const card = document.getElementById('proj-3i');
-  if (!card) return;
+  const root = document.documentElement;
+  const btn  = document.getElementById('theme-toggle');
+  if (!btn) return;
 
-  const body = card.querySelector('.card__body');
-  const media = card.querySelector('.card__media');
-  const img = media && media.querySelector('img');
-  if (!body || !media || !img) return;
+  const mqLight = window.matchMedia('(prefers-color-scheme: light)');
 
-  const mqMobile = window.matchMedia('(max-width: 900px)');
-
-  function applySizing(){
-    if (mqMobile.matches){
-      media.style.width = '';
-      img.style.height = '';
-      img.style.width = '';
-      return;
-    }
-
-    const textH = body.offsetHeight || 0;
-    if (!textH) return;
-
-    const ratio = (img.naturalWidth && img.naturalHeight)
-      ? (img.naturalWidth / img.naturalHeight)
-      : 1.6;
-
-    const targetW = Math.round(textH * ratio);
-
-    media.style.width = targetW + 'px';
-    img.style.height = textH + 'px';
-    img.style.width  = 'auto';
+  function current(){
+    const t = root.dataset.theme;
+    if (t === 'dark' || t === 'light') return t;
+    return mqLight.matches ? 'light' : 'dark';
   }
 
-  const reflow = () => requestAnimationFrame(applySizing);
-  if (img.complete) applySizing(); else img.addEventListener('load', reflow);
-
-  window.addEventListener('resize', reflow, { passive: true });
-  mqMobile.addEventListener('change', reflow);
-
-  if ('ResizeObserver' in window){
-    const ro = new ResizeObserver(reflow);
-    ro.observe(body);
+  function reflect(){
+    const t = current();
+    btn.setAttribute('aria-pressed', t === 'dark' ? 'true' : 'false');
+    btn.setAttribute('aria-label', t === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
   }
 
-  window.addEventListener('hashchange', () => setTimeout(reflow, 450));
-  document.addEventListener('DOMContentLoaded', reflow);
-  window.addEventListener('pageshow', reflow);
+  btn.addEventListener('click', () => {
+    const next = current() === 'dark' ? 'light' : 'dark';
+    root.dataset.theme = next;
+    try { localStorage.setItem('theme', next); } catch (_) {}
+    reflect();
+  });
+
+  mqLight.addEventListener('change', reflect);
+  reflect();
 })();
+
+// ============================================================
+// Publication abstracts: clamp with an explicit "show full" toggle
+// ============================================================
+document.querySelectorAll('[data-abstract-toggle]').forEach(btn => {
+  const card = btn.closest('.pub-card');
+  if (!card) return;
+  btn.addEventListener('click', () => {
+    const expanded = card.classList.toggle('is-expanded');
+    btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    btn.textContent = expanded ? 'Show less' : 'Show full abstract';
+  });
+});
+
+// ============================================================
+// Section counts ("3 projects", "3 papers") derived from the DOM
+// ============================================================
+document.querySelectorAll('[data-count]').forEach(el => {
+  const n = document.querySelectorAll(el.dataset.count).length;
+  const word = n === 1 ? (el.dataset.singular || '') : (el.dataset.plural || '');
+  el.textContent = n ? `${n} ${word}`.trim() : '';
+});
 
 // ============================================================
 // 7. Ping-Pong Video Playback (Forward & Backward Loop)
@@ -581,12 +575,13 @@ document.querySelectorAll('a[href$="viewer.html"]').forEach(a => {
   let isPlayingBackward = false;
   let animationFrameId = null;
   let lastTime = null;
-  const targetFPS = 60; // Target 60fps for smoother backward playback
+  const targetFPS = 30; // reverse playback seeks the decoder; 30fps is plenty
   const frameTime = 1000 / targetFPS;
   let accumulator = 0;
   
   // Function to handle backward playback with frame limiting for smoothness
   function playBackward(timestamp) {
+    if (userPaused || !onScreen) { animationFrameId = null; return; }
     if (!lastTime) {
       lastTime = timestamp;
       animationFrameId = requestAnimationFrame(playBackward);
@@ -633,8 +628,46 @@ document.querySelectorAll('a[href$="viewer.html"]').forEach(a => {
     }
   });
   
+  // Pause / resume control (autoplaying loops need a way to stop)
+  const toggleBtn = document.getElementById('videoToggle');
+  let userPaused = false;
+  function stopBackward(){
+    if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
+  }
+  function setPaused(paused){
+    userPaused = paused;
+    if (paused) { video.pause(); stopBackward(); }
+    else if (isPlayingBackward) { lastTime = null; accumulator = 0; animationFrameId = requestAnimationFrame(playBackward); }
+    else { video.play().catch(() => {}); }
+    if (toggleBtn) {
+      toggleBtn.setAttribute('aria-pressed', paused ? 'true' : 'false');
+      toggleBtn.setAttribute('aria-label', paused ? 'Play time-lapse' : 'Pause time-lapse');
+    }
+  }
+  if (toggleBtn) toggleBtn.addEventListener('click', () => setPaused(!userPaused));
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotion) { video.removeAttribute('autoplay'); setPaused(true); }
+
+  // Load and play only while the video is on screen; pause (and stop seeking) when it is not.
+  let onScreen = false;
+  let loaded = false;
+  function syncPlayback(){
+    if (onScreen && !userPaused){
+      if (!loaded){ loaded = true; video.load(); }
+      if (isPlayingBackward){ if (!animationFrameId){ lastTime = null; accumulator = 0; animationFrameId = requestAnimationFrame(playBackward); } }
+      else video.play().catch(() => {});
+    } else {
+      video.pause(); stopBackward();
+    }
+  }
+  if ('IntersectionObserver' in window){
+    new IntersectionObserver((entries) => { onScreen = entries.some(e => e.isIntersecting); syncPlayback(); }, { rootMargin: '10% 0px' }).observe(video);
+  } else { onScreen = true; syncPlayback(); }
+  document.addEventListener('visibilitychange', () => { if (document.hidden){ video.pause(); stopBackward(); } else syncPlayback(); });
+
   // Ensure video plays on load
   video.addEventListener('loadeddata', () => {
+    if (userPaused || !onScreen) return;
     video.play().catch(err => {
       console.log('Autoplay prevented, waiting for user interaction');
       // If autoplay is blocked, try to play on user interaction

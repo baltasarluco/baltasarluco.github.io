@@ -1,6 +1,8 @@
 # Baltasar Luco — Personal Site
 
-Modern single-page site with smooth section fades, an interactive spectral viewer, a photo gallery, and a brewing recipe page.
+Modern single-page site with smooth section fades, a dark/light theme toggle, an interactive spectral viewer, a photo gallery, and a brewing recipe page.
+
+Design notes live in `docs/superpowers/specs/`. When you change `styles.css` or `app.js`, bump the `?v=` query on their `<link>`/`<script>` tags in `index.html` so browsers pick up the new files, and rebuild the minified copies with `npx esbuild <file> --minify --outfile=<file.min>`.
 
 ## Project Structure
 ```
@@ -17,7 +19,7 @@ Modern single-page site with smooth section fades, an interactive spectral viewe
     js/spectral_viewer.js           # spectral viewer logic (source)
     js/spectral_viewer.min.js       # minified build
     img/                            # site imagery (favicon, hero, project art, logos)
-    img/photos/                     # photo gallery (webp) + manifest.json
+    img/photos/                     # photo originals + manifest.json; thumbs/ and large/ are generated
     pdfs/                           # downloadable PDFs (e.g. CV)
     video/                          # video assets
   pages/
@@ -32,8 +34,14 @@ Modern single-page site with smooth section fades, an interactive spectral viewe
 - Alternatively open `index.html` directly in a browser (some viewer features may require a server for file APIs).
 
 ## Photo Gallery
-- Drop new images into `assets/img/photos/` (webp recommended).
-- Run `node generate-photos.js` to refresh `assets/img/photos/manifest.json`.
+- Drop new images into `assets/img/photos/` (webp recommended). Originals can be any size; they are never served directly.
+- Run `node generate-photos.js` to refresh `assets/img/photos/manifest.json` and generate the web-sized copies the site serves:
+  `photos/thumbs/` (1000px, collage grid) and `photos/large/` (2000px, lightbox). Requires `cwebp`/`dwebp`.
+
+## Performance notes
+- The page background uses `assets/img/sky.webp` (1920px copy of the star-trail photo); the hero uses `Retrato-900.webp`.
+- Cards use flat translucent panels, not backdrop blur, so the scroll effects stay cheap. Only the header blurs its backdrop.
+- The time-lapse video and the photo collage only load and animate while they are on screen.
 
 ## Deployment
 - Published as a GitHub Pages user site at `baltasarluco.github.io`.
