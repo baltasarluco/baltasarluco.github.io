@@ -776,8 +776,8 @@
     const PHOTOS_DIR = 'assets/img/photos/thumbs/';
     const MANIFEST   = 'assets/img/photos/manifest.json';
 
-    const FADE_MS  = 2500; // fade duration (ms)
-    const MEAN_MS  = 5000; // mean inter-swap interval — Poisson process
+    const FADE_MS  = 1600; // fade duration (ms)
+    const MEAN_MS  = 3200; // mean inter-swap interval — Poisson process
 
     // Exponential inter-arrival time: t ~ Exp(1/MEAN_MS)
     // Floor at FADE_MS so a new swap never starts before the previous fade finishes
@@ -824,6 +824,27 @@
       // Set of keys currently visible — no duplicates allowed
       const displayed = new Set(slotKey.filter(Boolean));
 
+      // Shuffle bag: every photo gets its turn before any photo repeats.
+      // Whatever is on screen is held back until the next cycle, so a swap can
+      // never duplicate a visible photo and nothing comes straight back.
+      let bag = [];
+      function refillBag() {
+        bag = POOL.filter(p => !displayed.has(p.key));
+        for (let i = bag.length - 1; i > 0; i--) {      // Fisher-Yates
+          const j = Math.floor(Math.random() * (i + 1));
+          [bag[i], bag[j]] = [bag[j], bag[i]];
+        }
+      }
+      function nextPhoto() {
+        while (bag.length) {
+          const p = bag.pop();
+          if (!displayed.has(p.key)) return p;         // stale entry, drop it
+        }
+        refillBag();                                    // cycle complete
+        return bag.length ? bag.pop() : null;
+      }
+      refillBag();
+
       function swap() {
         const idle = slots.map((_, i) => i).filter(i => !slots[i]._busy);
         if (!idle.length) { schedule(); return; }
@@ -832,10 +853,9 @@
         const img        = imgs[slotIdx];
         if (!img) { schedule(); return; }
 
-        const candidates = POOL.filter(p => !displayed.has(p.key));
-        if (!candidates.length) { schedule(); return; }
+        const next = nextPhoto();
+        if (!next) { schedule(); return; }              // pool smaller than the grid
 
-        const next       = pick(candidates);
         const currentKey = slotKey[slotIdx];
 
         slots[slotIdx]._busy = true;
