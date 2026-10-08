@@ -3,182 +3,161 @@
  <head>
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1" name="viewport"/>
-  <title>
-   Interactive Spectra Viewer
-  </title>
+  <title>Interactive Spectra Viewer — Baltasar Luco</title>
+  <meta name="description" content="Load CSV, ASCII, FITS binary tables or ZIP archives and plot spectra in the browser: downsampled rendering, LaTeX axis labels, and a line list you can export."/>
   <link rel="icon" href="../assets/img/favicon.png" />
+  <script>
+    /* Match the theme chosen on the main site before first paint. */
+    try { var t = localStorage.getItem('theme'); if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap">
-  <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-AMS-MML_SVG"></script>
+  <link rel="preconnect" href="https://cdn.plot.ly" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css"/>
-  <link rel="stylesheet" href="../assets/css/spectral_viewer.css"/>
+  <link rel="stylesheet" href="../assets/css/spectral_viewer.css?v=20261007a"/>
   <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
-  <script defer="" src="https://cdn.plot.ly/plotly-2.35.2.min.js">
-  </script>
-  <script defer="" src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js">
-  </script>
+  <!-- MathJax 3 renders the $...$ axis labels. Plotly only typesets TeX with
+       MathJax 3, and deferred scripts run in order, so it must come first. -->
+  <script defer="" id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+  <script defer="" src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
  </head>
  <body>
+  <a class="skip-link" href="#graph">Skip to the plot</a>
   <div class="app">
    <div class="controls">
     <div class="controls-header">
      <div class="controls-title">
-      <h1>
-       Interactive Spectra Viewer
-      </h1>
-      
+      <h1>Interactive <span class="accent">Spectra</span> Viewer</h1>
      </div>
-     <div style="display: flex; gap: 12px; align-items: center;">
-      <a href="../index.html" class="back-link">
-       ← Back to Home
-      </a>
-      <div class="status-line" id="statusLine">
-       No spectra loaded
-      </div>
+     <div class="header-actions">
+      <a href="../index.html" class="back-link">← Back to home</a>
+      <div class="status-line" id="statusLine" role="status" aria-live="polite">No spectra loaded</div>
+      <button class="icon-btn theme-toggle" id="theme-toggle" type="button" aria-label="Switch to light theme" aria-pressed="true">
+       <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg>
+       <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M20.5 14.3A8.6 8.6 0 1 1 9.7 3.5a6.9 6.9 0 0 0 10.8 10.8z"/></svg>
+      </button>
      </div>
     </div>
     <div class="controls-grid">
      <section class="control-card" data-expandable="true">
       <div class="card-title">
-       <h2>
-        Load Data
-       </h2>
+       <h2>Load data</h2>
        <div class="row">
-        <button class="ghost" id="btnClear">
-         Clear
-        </button>
+        <button class="ghost" id="btnClear">Clear</button>
        </div>
       </div>
       <p class="small">
-       Select one or more <strong>CSV</strong>, <strong>TXT</strong>, <strong>ASCII</strong>, <strong>FITS Binary Table</strong>, <strong>ZIP</strong> files from disk.
+       Select one or more <strong>CSV</strong>, <strong>TXT</strong>, <strong>ASCII</strong>, <strong>FITS binary table</strong> or <strong>ZIP</strong> files from disk.
       </p>
-      <input accept=".csv,.txt,.ascii,.dat,.fits,.fit,.zip" id="fileInput" multiple="" type="file"/>
+      <input accept=".csv,.txt,.ascii,.dat,.fits,.fit,.zip" id="fileInput" multiple="" type="file" aria-label="Choose spectrum files"/>
       <p class="small">
-       Accepted separators: <strong>","</strong>, <strong>";"</strong>, <strong>":"</strong>, <strong>"\t"</strong>, <strong>"/s+/"</strong>. FITS Binary tables with multiple tables are accepted.
+       Separators: <strong>,</strong> <strong>;</strong> <strong>:</strong> <strong>tab</strong> or <strong>whitespace</strong>. FITS files with several binary tables load every table.
       </p>
-      <button class="primary" id="btnViewColumns" style="width: 100%; margin-top: 8px;">View All Columns</button>
+      <button class="primary" id="btnViewColumns" style="width: 100%; margin-top: 8px;">View all columns</button>
      </section>
+
      <section class="control-card" id="cardSpectra" data-expandable="true">
       <div class="card-title">
-       <h2>
-        Spectra
-       </h2>
+       <h2>Spectra</h2>
        <div class="row">
-        <button class="ghost" id="btnAll">
-         All
-        </button>
-        <button class="ghost" id="btnNone">
-         None
-        </button>
+        <button class="ghost" id="btnAll">All</button>
+        <button class="ghost" id="btnNone">None</button>
        </div>
       </div>
-      <input id="search" placeholder="Filter by name..."/>
-      <div id="spectraList">
-      </div>
+      <input id="search" placeholder="Filter by name…" aria-label="Filter spectra by name" autocomplete="off" spellcheck="false"/>
+      <div id="spectraList"></div>
      </section>
+
      <section class="control-card" id="cardPlot" data-expandable="true">
-      <h2>
-       Plot
-      </h2>
-      <div style="margin-bottom: 1px;">
-       <p class="small" style="margin-bottom: 6px;">Labels <span style="color: var(--muted); font-style: italic;">(text or $$, but not both)</span></p>
-       <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-        <label style="min-width: 20px; font-size: 13px; font-weight: 500;">X</label>
-        <input id="xAxisLabel" type="text" placeholder="X-axis label (LaTeX supported)" style="flex: 1;" value="$\lambda \; [\text{Å}]$"/>
+      <h2>Plot</h2>
+      <div>
+       <p class="small" style="margin-bottom: 6px;">Labels <em>(text or $$, but not both)</em></p>
+       <div class="axis-field">
+        <label for="xAxisLabel">X</label>
+        <input id="xAxisLabel" type="text" autocomplete="off" spellcheck="false" placeholder="X-axis label, e.g. $\lambda\,[\text{Å}]$" value="$\lambda \; [\text{Å}]$"/>
        </div>
-       <div style="display: flex; align-items: center; gap: 8px;">
-        <label style="min-width: 20px; font-size: 13px; font-weight: 500;">Y</label>
-        <input id="yAxisLabel" type="text" placeholder="Y-axis label (LaTeX supported)" style="flex: 1;" value="$F_\lambda \; [\text{erg s}^{-1} \text{ cm}^{-2} \text{ Å}^{-1}]$"/>
+       <div class="axis-field">
+        <label for="yAxisLabel">Y</label>
+        <input id="yAxisLabel" type="text" autocomplete="off" spellcheck="false" placeholder="Y-axis label, e.g. $F_\lambda$" value="$F_\lambda \; [\text{erg s}^{-1} \text{ cm}^{-2} \text{ Å}^{-1}]$"/>
        </div>
       </div>
       <label class="pill" style="margin-bottom: 5px;">
        <input checked="" id="toggleHover" type="checkbox"/>
-       Show Hover
+       Show hover
       </label>
-      <button id="btnToggleCustomPlot" class="ghost" style="width: 100%; margin-bottom: 8px; padding: 6px 12px; display: flex; align-items: center; justify-content: space-between;">
-       <span style="font-weight: 600; font-size: 13px;">Add Custom Plot</span>
-       <span id="toggleCustomPlotIcon" style="font-size: 18px; line-height: 1;">▼</span>
+      <button id="btnToggleCustomPlot" class="ghost" aria-expanded="false" aria-controls="customPlotForm">
+       <span class="label">Add custom plot</span>
+       <span class="chev" id="toggleCustomPlotIcon" aria-hidden="true">▼</span>
       </button>
-      <div id="customPlotForm" style="display: none; border: 1px solid var(--border); border-radius: 8px; padding: 10px; background: var(--fg); margin-bottom: 8px;">
-       <div style="margin-bottom: 6px;">
-        <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 2px;">Spectrum/Table</label>
-        <select id="spectrumSelect" style="width: 100%; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--fg); font-size: 13px;">
-         <option value="">Select a spectrum...</option>
+      <div id="customPlotForm" style="display: none;">
+       <div class="field">
+        <label for="spectrumSelect">Spectrum/table</label>
+        <select id="spectrumSelect">
+         <option value="">Select a spectrum…</option>
         </select>
        </div>
-       <div style="display: flex; gap: 6px; align-items: stretch; margin-bottom: 6px; width: 100%;">
-        <select id="plotTypeSelect" style="flex: 1; min-width: 0; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--fg); font-size: 13px;">
+       <div class="field">
+        <select id="plotTypeSelect" aria-label="Plot type">
          <option value="line-solid">Line (solid)</option>
          <option value="line-dashed">Line (dashed)</option>
          <option value="error-fill">Error band (fill)</option>
         </select>
        </div>
-       <div style="display: flex; gap: 8px; margin-bottom: 6px;">
-        <div style="flex: 1;">
-         <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 2px;">X Column</label>
-         <select id="xColumnSelect" style="width: 100%; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--fg); font-size: 13px;">
-          <option value="">Select X column...</option>
+       <div class="field-pair">
+        <div class="field">
+         <label for="xColumnSelect">X column</label>
+         <select id="xColumnSelect">
+          <option value="">Select X column…</option>
          </select>
         </div>
-        <div style="flex: 1;">
-         <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 2px;">Y Column</label>
-         <select id="yColumnSelect" style="width: 100%; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--fg); font-size: 13px;">
-          <option value="">Select Y column...</option>
+        <div class="field">
+         <label for="yColumnSelect">Y column</label>
+         <select id="yColumnSelect">
+          <option value="">Select Y column…</option>
          </select>
         </div>
        </div>
-       <div id="errorColumnRow" style="display: none; margin-bottom: 6px;">
-        <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 2px;">Error Column</label>
-        <select id="errorColumnSelect" style="width: 100%; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--fg); font-size: 13px;">
-         <option value="">Select error column...</option>
+       <div class="field" id="errorColumnRow" style="display: none;">
+        <label for="errorColumnSelect">Error column</label>
+        <select id="errorColumnSelect">
+         <option value="">Select error column…</option>
         </select>
        </div>
-       <div style="margin-bottom: 6px;">
-        <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 2px;">Legend Label</label>
-        <input id="labelInput" type="text" placeholder="e.g. Star A" style="width: 100%; padding: 4px 8px; font-size: 13px;"/>
+       <div class="field">
+        <label for="labelInput">Legend label</label>
+        <input id="labelInput" type="text" autocomplete="off" placeholder="e.g. Star A"/>
        </div>
-       <button id="btnAddPlotType" class="primary" style="padding: 6px 12px; white-space: nowrap; width: 100%;">Add Plot</button>
+       <button id="btnAddPlotType" class="primary" style="width: 100%;">Add plot</button>
       </div>
       <div id="activePlotTypes">
-       <!-- Active plot types will be listed here -->
+       <!-- Active plot types are listed here -->
       </div>
      </section>
+
      <section class="control-card" id="cardLines">
-      <div style="font-size:9px; color:var(--muted); text-align:center; margin-bottom:-5px;margin-top:-10px">
-       💡 Click <strong>+</strong> on plot toolbar to add lines
-      </div>
       <div class="card-title">
-       <h2>
-        Selected lines
-       </h2>
-       <button class="ghost" id="btnClearLines">
-        Clear
-       </button>
+       <h2>Selected lines</h2>
+       <button class="ghost" id="btnClearLines">Clear</button>
       </div>
-      <div class="lines-list empty" id="selectedLinesList">
-       No lines yet.
-      </div>
-      <button class="primary" disabled="" id="btnDownloadLines">
-       Download .txt
-      </button>
-      <!-- NEW: small hint below the button -->
-      <div class="tiny-note" id="linesPrecisionHint">
-       Saved with 4 decimals
-      </div>
+      <div class="lines-list empty" id="selectedLinesList">No lines yet.</div>
+      <button class="primary" disabled="" id="btnDownloadLines">Download .txt</button>
+      <div class="tiny-note" id="linesPrecisionHint">Click <strong>+</strong> on the plot toolbar to add lines. Saved with 4 decimals.</div>
      </section>
+
      <section class="control-card" data-expandable="true">
-      <h2>
-       Rendering
-      </h2>
+      <h2>Rendering</h2>
       <div class="chips">
        <label class="pill">
         Max points
-        <input id="maxPoints" min="500" step="500" type="number" value="4000"/>
+        <input id="maxPoints" min="500" step="500" type="number" inputmode="numeric" value="4000"/>
        </label>
        <label class="pill">
         Line width
-        <input id="lineWidth" max="6" min="1" type="number" value="2"/>
+        <input id="lineWidth" max="6" min="1" type="number" inputmode="numeric" value="2"/>
        </label>
       </div>
       <p class="small">
@@ -187,24 +166,44 @@
      </section>
     </div>
    </div>
+
    <div class="plot-area" id="plotWrap">
-    <div id="graph">
-    </div>
+    <div id="graph"></div>
    </div>
   </div>
-                <div style="width: 100%; display: flex; justify-content: flex-end; margin-top: -10px; margin-bottom: 0px;">
-                    <div style="max-width: 700px; width: 100%; display: flex; justify-content: flex-end; align-items: center; gap: 6px; padding-right: 32px;">
-                        <span style="font-size: 14px; color: var(--muted);">Questions, suggestions or report problems?</span>
-                        <a href="mailto:baltasarluco@uc.cl" style="font-size: 14px; color: var(--accent); font-weight: 500; transition: color 0.2s; text-decoration: none;">baltasarluco@uc.cl</a>
-                    </div>
-                </div>
-                <div style="height: 10px;"></div>
-    <style>
-        a[href^="mailto:"]:hover {
-            color: var(--accent);
-        }
-    </style>
 
-  <script src="../assets/js/spectral_viewer.min.js"></script>
+  <p class="contact-note">
+   <span>Questions, suggestions or a problem to report?</span>
+   <a href="mailto:baltasarluco@uc.cl">baltasarluco@uc.cl</a>
+  </p>
+
+  <script src="../assets/js/spectral_viewer.min.js?v=20261007a"></script>
+  <script>
+    /* Theme toggle — same key and behaviour as the main site, so a choice made
+       here carries back to the home page and vice versa. */
+    (function(){
+      const root = document.documentElement;
+      const btn  = document.getElementById('theme-toggle');
+      if (!btn) return;
+      const mqLight = window.matchMedia('(prefers-color-scheme: light)');
+      function current(){
+        const t = root.dataset.theme;
+        if (t === 'dark' || t === 'light') return t;
+        return mqLight.matches ? 'light' : 'dark';
+      }
+      function reflect(){
+        const t = current();
+        btn.setAttribute('aria-pressed', t === 'dark' ? 'true' : 'false');
+        btn.setAttribute('aria-label', t === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+      }
+      btn.addEventListener('click', () => {
+        root.dataset.theme = current() === 'dark' ? 'light' : 'dark';
+        try { localStorage.setItem('theme', root.dataset.theme); } catch (_) {}
+        reflect();
+      });
+      mqLight.addEventListener('change', reflect);
+      reflect();
+    })();
+  </script>
  </body>
 </html>

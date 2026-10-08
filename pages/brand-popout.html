@@ -3,420 +3,590 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Baltasar — Brick Breaker</title>
+  <title>Brick Breaker — Baltasar Luco</title>
+  <meta name="description" content="A small brick breaker game tucked behind the site's nameplate." />
   <link rel="icon" href="../assets/img/favicon.png" />
-  <link rel="stylesheet" href="../assets/css/styles.css" />
+  <script>
+    /* Match the theme chosen on the main site before first paint. */
+    try { var t = localStorage.getItem('theme'); if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20261007a" />
   <style>
-    :root{
-      --bg:#09090b; --fg:#f4f4f5; --muted:#a1a1aa;
-      --accent:#34d399; --accent-2:#a1a1aa; --panel:#18181b;
-      --panel-soft:#27272a; --border:#3f3f46;
+    /* The popout borrows the site's tokens from styles.css; only the window
+       chrome and the board live here. No palette is redefined. */
+    html, body{ height: 100%; }
+    body{
+      margin: 0;
+      min-height: 100dvh;
+      display: block;
+      background: var(--bg);
+      color: var(--fg);
+      font: 14px/1.5 var(--font-body);
+      /* auto, not hidden: in a very short window the board would otherwise be
+         clipped with no way to scroll to it. */
+      overflow: auto;
     }
-    html,body{margin:0;height:100%}
-    body{background:var(--panel); color:var(--fg); font:14px/1.4 system-ui,-apple-system, Segoe UI, Roboto, Ubuntu, Arial}
-    .popout{min-height:100dvh;display:flex; flex-direction:column; border:1px solid var(--border); background:var(--panel-soft)}
+    body::after{ content: none; }           /* no page veil in the popout */
+
+    .popout{
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+
     .popout__titlebar{
-      display:flex; align-items:center; justify-content:space-between;
-      height:44px; padding:0 12px 0 14px;
-      background:rgba(255,255,255,.03);
-      border-bottom:1px solid var(--border); user-select:none;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      height: 46px; padding: 0 10px 0 16px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      user-select: none;
+      -webkit-backdrop-filter: saturate(140%) blur(10px);
+      backdrop-filter: saturate(140%) blur(10px);
     }
-    .popout__title{font-family:"Bebas Neue",system-ui,sans-serif; font-weight:400; letter-spacing:.8px; font-size:20px;}
-    .popout__close{
-      border:1px solid var(--border);
-      background:var(--panel);
-      color:var(--fg); border-radius:8px; padding:6px 10px; cursor:pointer; line-height:1;
-      transition: background .15s, border-color .15s;
+    .popout__title{
+      font-family: var(--font-display);
+      font-weight: 600;
+      letter-spacing: -.02em;
+      font-size: 17px;
+      display: inline-flex; align-items: center; gap: 9px;
     }
-    .popout__close:hover{ background:var(--panel-soft); border-color:var(--muted); }
+    /* The nameplate dot from the site header, reused as the game's mark. */
+    .popout__mark{
+      width: 9px; height: 9px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(var(--accent-rgb), .16);
+      flex: none;
+    }
+    .popout__actions{ display: flex; align-items: center; gap: 8px; }
+
+    .ctl{
+      font: 500 12.5px/1 var(--font-body);
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-strong);
+      background: var(--panel-soft);
+      color: var(--fg);
+      cursor: pointer;
+      transition: background .15s var(--ease), border-color .15s var(--ease), color .15s var(--ease);
+    }
+    .ctl:hover{ background: rgba(var(--accent-rgb), .10); border-color: var(--accent); color: var(--accent); }
+    .ctl--icon{ padding: 8px 10px; }
+
     .hud{
-      display:flex; gap:12px; align-items:center; justify-content:center;
-      padding:8px 10px; border-bottom:1px solid var(--border);
-      background:rgba(52,211,153,.04);
-      color:var(--fg);
+      display: flex; gap: 8px; align-items: center; justify-content: center; flex-wrap: wrap;
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel-soft);
     }
-    .hud .badge{
-      border:1px solid var(--border); border-radius:999px; padding:4px 10px;
-      background:rgba(255,255,255,.04); font-size:13px;
+    .badge{
+      display: inline-flex; align-items: baseline; gap: 6px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 11px;
+      font-size: 11px;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: var(--muted);
     }
-    .wrap{display:grid; place-items:center; padding:10px; min-height:0; flex:1}
+    .badge b{
+      font: 500 13px/1 var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0;
+      color: var(--fg);
+    }
+    .badge--hint{ text-transform: none; letter-spacing: 0; font-size: 11.5px; }
+    .badge--hint kbd{
+      font: 500 11px/1 var(--font-mono);
+      border: 1px solid var(--border-strong);
+      border-radius: 5px;
+      padding: 2px 4px;
+      color: var(--fg-soft);
+    }
+
+    .wrap{ display: grid; place-items: center; padding: 12px; flex: 1; min-height: 0; }
     canvas{
-      background:#0d1117; box-shadow:0 8px 24px rgba(0,0,0,.4);
-      border:1px solid var(--border); border-radius:12px; touch-action:none
+      display: block;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--img-shadow);
+      touch-action: none;
+      cursor: crosshair;
     }
-    .help{text-align:center; color:var(--muted); margin:8px 0 0}
-    .btn{
-      display:inline-block; margin-left:8px; padding:6px 12px; border-radius:8px; color:#052e16;
-      background:var(--accent); border:1px solid #059669;
-      text-decoration:none; font-weight:600; font-size:13px; cursor:pointer;
-      transition: filter .15s;
+    canvas:focus-visible{ outline: 2px solid var(--accent); outline-offset: 3px; }
+
+    .sr-only{
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
     }
-    .btn:hover{ filter: brightness(1.1); }
+
+    @media (max-width: 420px){
+      .popout__title{ font-size: 15px; }
+      .badge--hint{ display: none; }
+    }
   </style>
 </head>
 <body>
   <div class="popout">
     <div class="popout__titlebar">
-      <div class="popout__title">Brick Breaker</div>
-      <div>
-        <button id="btnReset" class="btn" type="button">Reset</button>
-        <button class="popout__close" type="button" onclick="window.close()">✕</button>
+      <div class="popout__title"><span class="popout__mark" aria-hidden="true"></span>Brick Breaker</div>
+      <div class="popout__actions">
+        <button id="btnReset" class="ctl" type="button">Reset</button>
+        <button id="btnClose" class="ctl ctl--icon" type="button" aria-label="Close this window">✕</button>
       </div>
     </div>
 
     <div class="hud">
-      <span class="badge">Score: <strong id="score">0</strong></span>
-      <span class="badge">Level: <strong id="level">1</strong></span>
-      <span class="badge">Mouse = Paddle</span>
+      <span class="badge">Score <b id="score">0</b></span>
+      <span class="badge">Level <b id="level">1</b></span>
+      <span class="badge badge--hint">Move with the mouse or <kbd>←</kbd> <kbd>→</kbd></span>
     </div>
 
     <div class="wrap">
-      <canvas id="game" width="440" height="440"></canvas>
+      <canvas id="game" tabindex="0" role="application"
+              aria-label="Brick breaker board. Move the paddle with the mouse or the left and right arrow keys. Press space to launch the ball."></canvas>
     </div>
+
+    <p class="sr-only" id="liveStatus" role="status" aria-live="polite"></p>
   </div>
 
   <script>
   (function(){
-    const canvas = document.getElementById('game');
-    const ctx = canvas.getContext('2d');
-    const scoreEl = document.getElementById('score');
-    const levelEl = document.getElementById('level');
+    const canvas   = document.getElementById('game');
+    const ctx      = canvas.getContext('2d');
+    const scoreEl  = document.getElementById('score');
+    const levelEl  = document.getElementById('level');
+    const liveEl   = document.getElementById('liveStatus');
     const btnReset = document.getElementById('btnReset');
+    const btnClose = document.getElementById('btnClose');
 
-    // --- Constants ---
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    // --- Board geometry (logical pixels; the canvas backing store is scaled by DPR) ---
     const PADDLE_W = 80, PADDLE_H = 12, PADDLE_Y_OFFSET = 18;
     const BALL_R = 6;
-    const ROWS_START = 4, COLS = 8;
-    const BRICK_H = 18, BRICK_GUTTER = 5, BRICK_TOP = 40, BRICK_LEFT = 20;
+    const ROWS_START = 4, COLS = 8, ROWS_MAX = 10;
+    const BRICK_H = 18, BRICK_GUTTER = 5, BRICK_TOP = 40, BRICK_SIDE = 20;
 
-    // Colors
-    const COLOR_BRICK = '#3f3f46';
-    const COLOR_BRICK_EDGE = '#52525b';
-    const COLOR_ACCENT = '#34d399';
-    const COLOR_BALL = '#a7f3d0';
-    const COLOR_TEXT = '#f4f4f5';
+    // Physics is expressed in units per 1/60 s and integrated against real time,
+    // so the ball travels at the same speed on 60 Hz and 120 Hz displays.
+    const FRAME = 1000 / 60;
+    const MAX_DT = 3;              // clamp after a tab switch so nothing teleports
+    const LAUNCH_SPEED = 5.0;
+    const MAX_SPEED = 9.0;         // keeps the ball from outrunning the paddle
+    const SPEEDUP = 1.01;
+    const KEY_PADDLE_SPEED = 7.5;  // logical px per 1/60 s
 
-    // Derived helpers
-    function brickWidth(){ return (canvas.width - 40) / COLS; }
-    function defaultPositions(){
-      return {
-        paddleX: (canvas.width - PADDLE_W)/2,
-        ballX: canvas.width/2,
-        ballY: canvas.height - 60,
-        ballVX: 3.6,
-        ballVY: -4.4
-      };
-    }
-    function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
-
-    // --- State ---
+    let W = 440, H = 440;          // logical board size
     let paddleX, ballX, ballY, ballVX, ballVY;
     let rows = ROWS_START, level = 1, score = 0;
     let running = false, gameOver = false;
     let bricks = [];
-    let firstLayoutDone = false;
-    let overlayMsg = "";
-    let pendingResize = false;
+    let overlayMsg = '';
+    let trail = [];                // the long exposure: recent ball positions
+    let keyLeft = false, keyRight = false;
+    let lastTs = 0, rafId = 0;
 
-
-    function setOverlay(msg){
-      overlayMsg = msg || "";
+    // --- Theme: every canvas colour comes from the stylesheet, so the board
+    //     follows the site's dark/light choice instead of hard-coding one. ---
+    const theme = {};
+    function cssVar(name, fallback){
+      const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return v || fallback;
     }
-    function drawOverlay(){
-      if (!overlayMsg) return;
-      ctx.fillStyle = 'rgba(0,0,0,.35)';
-      ctx.fillRect(0,0,canvas.width,canvas.height);
-      ctx.fillStyle = COLOR_TEXT;
-      ctx.font = 'bold 18px system-ui, -apple-system, Segoe UI, Roboto';
-      ctx.textAlign = 'center';
-      ctx.fillText(overlayMsg, canvas.width/2, canvas.height/2);
+    function toRGB(value, fallback){
+      const v = (value || '').trim();
+      let m = v.match(/^#([0-9a-f]{3})$/i);
+      if (m) return [0,1,2].map(i => parseInt(m[1][i] + m[1][i], 16));
+      m = v.match(/^#([0-9a-f]{6})$/i);
+      if (m) return [0,2,4].map(i => parseInt(m[1].slice(i, i+2), 16));
+      m = v.match(/^rgba?\(([^)]+)\)$/i);
+      if (m) return m[1].split(',').slice(0,3).map(n => parseFloat(n));
+      m = v.match(/^(\d+)\s*,\s*(\d+)\s*,\s*(\d+)$/);
+      if (m) return [+m[1], +m[2], +m[3]];
+      return fallback;
+    }
+    function rgba(rgb, a){ return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`; }
+    function mix(a, b, t){ return a.map((v, i) => Math.round(v + (b[i] - v) * t)); }
+
+    function readTheme(){
+      theme.bg      = toRGB(cssVar('--bg', '#0a1118'), [10,17,24]);
+      theme.panel   = toRGB(cssVar('--panel-solid', '#111c26'), [17,28,38]);
+      theme.accent  = toRGB(cssVar('--accent', '#3cf5d0'), [60,245,208]);
+      theme.warm    = toRGB(cssVar('--warm', '#dcb77c'), [220,183,124]);
+      theme.fg      = toRGB(cssVar('--fg', '#e9eef2'), [233,238,242]);
+      theme.muted   = toRGB(cssVar('--muted', '#8fa0ad'), [143,160,173]);
+      theme.border  = toRGB(cssVar('--border-strong', '#2a3a46'), [42,58,70]);
+      theme.isLight = (theme.bg[0] + theme.bg[1] + theme.bg[2]) / 3 > 128;
+    }
+    readTheme();
+
+    new MutationObserver(() => { readTheme(); draw(); })
+      .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    window.matchMedia('(prefers-color-scheme: light)')
+      .addEventListener('change', () => { readTheme(); draw(); });
+
+    // --- Helpers ---
+    function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+    function brickWidth(){ return (W - BRICK_SIDE * 2) / COLS; }
+    function paddleTop(){ return H - PADDLE_Y_OFFSET - PADDLE_H; }
+
+    function applyDefaults(){
+      paddleX = (W - PADDLE_W) / 2;
+      ballX = W / 2;
+      ballY = paddleTop() - BALL_R - 2;
+      ballVX = 0; ballVY = 0;
+      trail = [];
     }
 
-    function createBricks() {
+    function createBricks(){
       bricks = [];
       const BW = brickWidth();
-      for (let r = 0; r < rows; r++) {
+      for (let r = 0; r < rows; r++){
         const row = [];
-        for (let c = 0; c < COLS; c++) {
-          row.push({ x: BRICK_LEFT + c * BW, y: BRICK_TOP + r * (BRICK_H + BRICK_GUTTER), hits: 1 });
+        for (let c = 0; c < COLS; c++){
+          row.push({ x: BRICK_SIDE + c * BW, y: BRICK_TOP + r * (BRICK_H + BRICK_GUTTER), row: r, hits: 1 });
         }
         bricks.push(row);
       }
     }
 
-    function applyDefaults(){
-      const d = defaultPositions();
-      paddleX = d.paddleX;
-      ballX = d.ballX; ballY = d.ballY;
-      ballVX = d.ballVX; ballVY = d.ballVY;
-    }
-
-    // --- Input: mouse/touch follow only while running (never when stopped or game over) ---
-    function pointerToCanvasX(evt){
-      const rect = canvas.getBoundingClientRect();
-      const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
-      return (clientX - rect.left) * (canvas.width / rect.width);
-    }
-    function onPointerMove(evt){
-      if (!running || gameOver) return; // stays frozen unless running
-      const x = pointerToCanvasX(evt);
-      paddleX = clamp(x - PADDLE_W/2, 0, canvas.width - PADDLE_W);
-      evt.preventDefault();
-    }
-    canvas.addEventListener('mousemove', onPointerMove);
-    canvas.addEventListener('touchmove', onPointerMove, {passive:false});
-
-    // --- Start-only clicks (no pause) ---
-    function startIfPossible(){
-      if (gameOver){
-        resetGame();   // fresh bricks + defaults + overlay "Click to start"
-        overlayMsg = ""; // clear overlay when actually starting
-        randomizeBallDirection();
-        running = true;
-      } else if (!running){
-        overlayMsg = ""; // clear overlay
-        randomizeBallDirection();
-        running = true;
-      }
-      // if already running, ignore (no pause)
-    }
-    canvas.addEventListener('mousedown', startIfPossible);
-    canvas.addEventListener('touchstart', (e)=>{ startIfPossible(); e.preventDefault(); }, {passive:false});
-
-    // --- Reset button (manual hard reset) ---
-    btnReset.addEventListener('click', resetGame);
-    function resetGame() {
-      score = 0; level = 1; rows = ROWS_START; gameOver = false;
-      applyDefaults();
-      createBricks();
-      updateHUD();
-      running = false;
-      setOverlay('Click to start');  // ← persist overlay while idle
-      draw();
-    }
-
+    function setOverlay(msg){ overlayMsg = msg || ''; }
+    function announce(msg){ if (liveEl) liveEl.textContent = msg; }
 
     function updateHUD(){
       scoreEl.textContent = score;
       levelEl.textContent = level;
     }
 
-    // --- Initialize ---
-    window.addEventListener('resize', () => {
-      if (running) {          // ← if playing, don't rebuild now
-        pendingResize = true; // queue it
-        return;
+    // --- Canvas sizing: one resize path, DPR-aware, never mid-rally ---
+    function boardSize(){
+      const PAD_X = 26, PAD_Y = 124;
+      const MIN = 300, MAX = 450;
+      const availW = Math.max(0, window.innerWidth  - PAD_X);
+      const availH = Math.max(0, window.innerHeight - PAD_Y);
+      return Math.max(MIN, Math.min(MAX, Math.floor(Math.min(availW, availH))));
+    }
+    function fitCanvas(){
+      const size = boardSize();
+      const dpr = Math.min(window.devicePixelRatio || 1, 3);
+      W = H = size;
+      canvas.style.width = size + 'px';
+      canvas.style.height = size + 'px';
+      canvas.width  = Math.round(size * dpr);
+      canvas.height = Math.round(size * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    function relayout(){
+      // Rebuilding the board mid-rally would move bricks under the ball, so a
+      // resize while playing only rescales what is already on screen.
+      const wasRunning = running;
+      const prevW = W;
+      fitCanvas();
+      if (wasRunning && prevW > 0){
+        const k = W / prevW;
+        paddleX = clamp(paddleX * k, 0, W - PADDLE_W);
+        ballX *= k; ballY *= k;
+        trail = [];
+        const BW = brickWidth();
+        bricks.forEach((row, r) => row.forEach((b, c) => {
+          if (b){ b.x = BRICK_SIDE + c * BW; b.y = BRICK_TOP + r * (BRICK_H + BRICK_GUTTER); }
+        }));
+      } else {
+        createBricks();
+        applyDefaults();
       }
-      fitCanvas();            // idle or before first run → safe to resize/rebuild
+      draw();
+    }
+    window.addEventListener('resize', relayout);
+
+    // --- Input ---
+    function pointerToBoardX(evt){
+      const rect = canvas.getBoundingClientRect();
+      const clientX = evt.touches && evt.touches.length ? evt.touches[0].clientX : evt.clientX;
+      return (clientX - rect.left) * (W / rect.width);
+    }
+    function onPointerMove(evt){
+      if (!running || gameOver) return;      // the board stays put until play starts
+      paddleX = clamp(pointerToBoardX(evt) - PADDLE_W / 2, 0, W - PADDLE_W);
+      evt.preventDefault();
+    }
+    canvas.addEventListener('mousemove', onPointerMove);
+    canvas.addEventListener('touchmove', onPointerMove, { passive: false });
+
+    function startIfPossible(){
+      if (gameOver){ resetGame(); }
+      if (running) return;                   // no pause; a click only ever starts
+      setOverlay('');
+      launchBall();
+      running = true;
+      announce('Ball launched.');
+      startLoop();
+    }
+    // Clicking a tabindex'd canvas focuses it natively; calling focus() here as
+    // well would also raise the keyboard focus ring on a plain mouse click.
+    canvas.addEventListener('mousedown', startIfPossible);
+    canvas.addEventListener('touchstart', (e) => { startIfPossible(); e.preventDefault(); }, { passive: false });
+
+    canvas.addEventListener('keydown', (e) => {
+      switch (e.key){
+        case 'ArrowLeft': case 'a': case 'A': keyLeft = true; e.preventDefault(); break;
+        case 'ArrowRight': case 'd': case 'D': keyRight = true; e.preventDefault(); break;
+        case ' ': case 'Enter': startIfPossible(); e.preventDefault(); break;
+        case 'r': case 'R': resetGame(); announce('Game reset.'); e.preventDefault(); break;
+      }
+      if (!running) startLoop();              // keyboard aiming works while idle too
     });
-    fitCanvas();             // 1) size canvas for current window
-    applyDefaults();         // 2) defaults for this size
-    createBricks();          // 3) bricks for this width
-    updateHUD();
-    setOverlay('Click to start');
-    draw();
+    canvas.addEventListener('keyup', (e) => {
+      if (e.key === 'ArrowLeft'  || e.key === 'a' || e.key === 'A') keyLeft = false;
+      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keyRight = false;
+    });
+    window.addEventListener('blur', () => { keyLeft = keyRight = false; });
 
+    btnReset.addEventListener('click', () => { resetGame(); announce('Game reset.'); canvas.focus(); });
+    btnClose.addEventListener('click', () => {
+      window.close();
+      // window.close() is ignored unless a script opened this window.
+      setTimeout(() => { if (!window.closed) window.location.href = '../index.html'; }, 120);
+    });
 
-    // --- Physics & collisions ---
-    function step(){
-      if (!running || gameOver) return;
+    function resetGame(){
+      score = 0; level = 1; rows = ROWS_START; gameOver = false; running = false;
+      createBricks();
+      applyDefaults();
+      updateHUD();
+      setOverlay('Click or press space to start');
+      draw();
+    }
 
-      ballX += ballVX;
-      ballY += ballVY;
-
-      // walls
-      if (ballX < BALL_R){ ballX = BALL_R; ballVX *= -1; }
-      if (ballX > canvas.width - BALL_R){ ballX = canvas.width - BALL_R; ballVX *= -1; }
-      if (ballY < BALL_R){ ballY = BALL_R; ballVY *= -1; }
-
-      // paddle
-      const paddleTop = canvas.height - PADDLE_Y_OFFSET - PADDLE_H;
-      if (ballY + BALL_R >= paddleTop &&
-          ballY - BALL_R <= paddleTop + PADDLE_H &&
-          ballX >= paddleX && ballX <= paddleX + PADDLE_W &&
-          ballVY > 0) {
-        ballY = paddleTop - BALL_R;
-        const hitPos = (ballX - (paddleX + PADDLE_W/2)) / (PADDLE_W/2); // -1..1
-        const speed = Math.hypot(ballVX, ballVY);
-        const angle = hitPos * (Math.PI/3); // up to 60°
-        ballVX = speed * Math.sin(angle);
-        ballVY = -Math.abs(speed * Math.cos(angle));
-        ballVX *= 1.01; ballVY *= 1.01; // slight speed-up each paddle hit
+    function launchBall(){
+      // Up and out at a random angle, never close to vertical.
+      const deg = (Math.random() * 120 - 60) * Math.PI / 180;
+      let vx = LAUNCH_SPEED * Math.sin(deg);
+      let vy = -Math.abs(LAUNCH_SPEED * Math.cos(deg));
+      const MIN_VX = 1.0;
+      if (Math.abs(vx) < MIN_VX){
+        vx = MIN_VX * (Math.random() < 0.5 ? -1 : 1);
+        vy = -Math.sqrt(Math.max(0.1, LAUNCH_SPEED * LAUNCH_SPEED - vx * vx));
       }
+      ballVX = vx; ballVY = vy;
+      trail = [];
+    }
 
-      // bottom -> GAME OVER (reset to defaults and wait for click)
-      if (ballY > canvas.height + BALL_R){
-        running = false;
-        gameOver = true;
+    // --- Simulation ---
+    function movePaddleByKeys(dt){
+      if (!keyLeft && !keyRight) return;
+      const delta = (keyRight ? 1 : 0) - (keyLeft ? 1 : 0);
+      paddleX = clamp(paddleX + delta * KEY_PADDLE_SPEED * dt, 0, W - PADDLE_W);
+      if (!running && !gameOver){ ballX = clamp(paddleX + PADDLE_W / 2, BALL_R, W - BALL_R); }
+    }
 
-        applyDefaults();              // ← go back to default paddle/ball
-        setOverlay("Game Over — click to start");
-        draw();                       // paint the reset frame with overlay
-        return;
-      }
+    function bounceOffPaddle(){
+      const top = paddleTop();
+      if (ballVY <= 0) return false;
+      if (ballY + BALL_R < top || ballY - BALL_R > top + PADDLE_H) return false;
+      if (ballX < paddleX - BALL_R || ballX > paddleX + PADDLE_W + BALL_R) return false;
 
+      ballY = top - BALL_R;
+      const hitPos = clamp((ballX - (paddleX + PADDLE_W / 2)) / (PADDLE_W / 2), -1, 1);
+      const angle = hitPos * (Math.PI / 3);                        // up to 60°
+      const speed = Math.min(Math.hypot(ballVX, ballVY) * SPEEDUP, MAX_SPEED);
+      ballVX = speed * Math.sin(angle);
+      ballVY = -Math.abs(speed * Math.cos(angle));
+      return true;
+    }
 
-      // bricks
-      outer: for (let r=0; r<bricks.length; r++){
-        for (let c=0; c<bricks[r].length; c++){
+    function hitBricks(){
+      const BW = brickWidth();
+      const bw = BW - BRICK_GUTTER;
+      for (let r = 0; r < bricks.length; r++){
+        for (let c = 0; c < bricks[r].length; c++){
           const b = bricks[r][c];
           if (!b || b.hits <= 0) continue;
-          const BW = brickWidth();
-          const bx = b.x, by = b.y, bw = BW - BRICK_GUTTER, bh = BRICK_H;
-          const cx = clamp(ballX, bx, bx + bw);
-          const cy = clamp(ballY, by, by + bh);
+          const cx = clamp(ballX, b.x, b.x + bw);
+          const cy = clamp(ballY, b.y, b.y + BRICK_H);
           const dx = ballX - cx, dy = ballY - cy;
-          if (dx*dx + dy*dy <= BALL_R*BALL_R){
+          if (dx * dx + dy * dy <= BALL_R * BALL_R){
             b.hits -= 1; score += 10; updateHUD();
             if (Math.abs(dx) > Math.abs(dy)) ballVX *= -1; else ballVY *= -1;
             if (b.hits <= 0) bricks[r][c] = null;
-            break outer;
+            return true;
           }
         }
       }
-
-      // level cleared -> prep next level at start position
-      const anyLeft = bricks.some(row => row.some(b => b && b.hits > 0));
-      if (!anyLeft){
-        level += 1;
-        rows = Math.min(rows + 1, 10);
-        createBricks();
-        updateHUD();
-        applyDefaults();                     // ← start positions for next level
-        running = false;
-        setOverlay(`Level ${level} — click to start`);
-        draw();
-        return;
-      }
-
+      return false;
     }
 
-    function randomizeBallDirection() {
-      // Launch upward with a random left/right angle within ±60°
-      const deg   = (Math.random() * 120 - 60) * Math.PI / 180;  // -60..+60 degrees
-      const speed = 5.0;  // tweak to taste (overall speed)
-      let vx = speed * Math.sin(deg);
-      let vy = -Math.abs(speed * Math.cos(deg)); // always upward
+    function substep(dt){
+      ballX += ballVX * dt;
+      ballY += ballVY * dt;
 
-      // Avoid near-vertical trajectories
-      const MIN_VX = 1.0;
-      if (Math.abs(vx) < MIN_VX) {
-        vx = MIN_VX * (Math.random() < 0.5 ? -1 : 1);
-        const v2 = Math.max(0.1, speed*speed - vx*vx);
-        vy = -Math.sqrt(v2);
+      if (ballX < BALL_R){ ballX = BALL_R; ballVX = Math.abs(ballVX); }
+      if (ballX > W - BALL_R){ ballX = W - BALL_R; ballVX = -Math.abs(ballVX); }
+      if (ballY < BALL_R){ ballY = BALL_R; ballVY = Math.abs(ballVY); }
+
+      bounceOffPaddle();
+      hitBricks();
+
+      if (ballY > H + BALL_R){
+        running = false; gameOver = true;
+        applyDefaults();
+        setOverlay('Game over — click to start again');
+        announce('Game over. Final score ' + score + '.');
+        return false;
       }
 
-      ballVX = vx;
-      ballVY = vy;
+      if (!bricks.some(row => row.some(b => b && b.hits > 0))){
+        level += 1;
+        rows = Math.min(rows + 1, ROWS_MAX);
+        createBricks();
+        applyDefaults();
+        updateHUD();
+        running = false;
+        setOverlay('Level ' + level + ' — click to start');
+        announce('Level ' + level + ' ready. Score ' + score + '.');
+        return false;
+      }
+      return true;
+    }
+
+    function step(dt){
+      movePaddleByKeys(dt);
+      if (!running || gameOver) return;
+
+      // Split the frame so a fast ball can never tunnel through the paddle or a brick.
+      const travel = Math.hypot(ballVX, ballVY) * dt;
+      const steps = Math.max(1, Math.ceil(travel / (BALL_R * 0.8)));
+      const sub = dt / steps;
+      for (let i = 0; i < steps; i++){ if (!substep(sub)) break; }
+
+      if (!reduceMotion.matches && running){
+        trail.push({ x: ballX, y: ballY });
+        if (trail.length > 14) trail.shift();
+      }
     }
 
     // --- Rendering ---
     function drawBackground(){
-      const g = ctx.createRadialGradient(canvas.width*0.7, canvas.height*0.3, 10, canvas.width*0.7, canvas.height*0.3, canvas.width*0.9);
-      g.addColorStop(0, '#0d1117');
-      g.addColorStop(1, '#09090b');
+      const g = ctx.createRadialGradient(W * .7, H * .28, 10, W * .7, H * .28, W * .95);
+      g.addColorStop(0, rgba(mix(theme.panel, theme.accent, theme.isLight ? .05 : .07), 1));
+      g.addColorStop(1, rgba(theme.bg, 1));
       ctx.fillStyle = g;
-      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillRect(0, 0, W, H);
     }
-    function drawPaddle(){
-      const y = canvas.height - PADDLE_Y_OFFSET - PADDLE_H;
-      ctx.fillStyle = COLOR_ACCENT;
-      ctx.fillRect(paddleX, y, PADDLE_W, PADDLE_H);
-    }
-    function drawBall(){
+
+    function roundRect(x, y, w, h, r){
+      const rr = Math.min(r, w / 2, h / 2);
       ctx.beginPath();
-      ctx.arc(ballX, ballY, BALL_R, 0, Math.PI*2);
-      ctx.fillStyle = COLOR_BALL;
-      ctx.fill();
+      ctx.moveTo(x + rr, y);
+      ctx.arcTo(x + w, y, x + w, y + h, rr);
+      ctx.arcTo(x + w, y + h, x, y + h, rr);
+      ctx.arcTo(x, y + h, x, y, rr);
+      ctx.arcTo(x, y, x + w, y, rr);
+      ctx.closePath();
     }
+
     function drawBricks(){
-      const BW = brickWidth();
+      const bw = brickWidth() - BRICK_GUTTER;
+      const span = Math.max(1, rows - 1);
       for (const row of bricks){
         for (const b of row){
-          if (!b || b.hits<=0) continue;
-          const bw = BW - BRICK_GUTTER;
-          ctx.fillStyle = COLOR_BRICK;
-          ctx.fillRect(b.x, b.y, bw, BRICK_H);
-          ctx.strokeStyle = COLOR_BRICK_EDGE;
-          ctx.strokeRect(b.x + .5, b.y + .5, bw - 1, BRICK_H - 1);
+          if (!b || b.hits <= 0) continue;
+          // Rows cool from accent to warm with depth — the star-trail gradient.
+          const t = b.row / span;
+          const hue = mix(theme.accent, theme.warm, t);
+          ctx.fillStyle = rgba(mix(theme.panel, hue, theme.isLight ? .18 : .13), 1);
+          roundRect(b.x, b.y, bw, BRICK_H, 4);
+          ctx.fill();
+          ctx.fillStyle = rgba(hue, theme.isLight ? .85 : .7);
+          roundRect(b.x, b.y, bw, 2.5, 1.25);
+          ctx.fill();
         }
       }
     }
+
+    function drawTrail(){
+      if (!trail.length) return;
+      for (let i = 0; i < trail.length; i++){
+        const p = trail[i];
+        const t = (i + 1) / trail.length;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, BALL_R * (0.35 + 0.55 * t), 0, Math.PI * 2);
+        // The light ground swallows a faint trail, so it carries more weight there.
+        const base = theme.isLight ? 0.10 : 0.05;
+        const span = theme.isLight ? 0.34 : 0.16;
+        ctx.fillStyle = rgba(theme.warm, base + span * t);
+        ctx.fill();
+      }
+    }
+
+    function drawBall(){
+      ctx.beginPath();
+      ctx.arc(ballX, ballY, BALL_R, 0, Math.PI * 2);
+      ctx.fillStyle = rgba(theme.warm, 1);
+      ctx.fill();
+    }
+
+    function drawPaddle(){
+      ctx.fillStyle = rgba(theme.accent, 1);
+      roundRect(paddleX, paddleTop(), PADDLE_W, PADDLE_H, 6);
+      ctx.fill();
+    }
+
     function drawOverlay(){
       if (!overlayMsg) return;
-      ctx.fillStyle = 'rgba(0,0,0,.35)';
-      ctx.fillRect(0,0,canvas.width,canvas.height);
-      ctx.fillStyle = COLOR_TEXT;
-      ctx.font = 'bold 18px system-ui, -apple-system, Segoe UI, Roboto';
+      ctx.fillStyle = rgba(theme.bg, theme.isLight ? .72 : .66);
+      ctx.fillRect(0, 0, W, H);
       ctx.textAlign = 'center';
-      ctx.fillText(overlayMsg, canvas.width/2, canvas.height/2);
+      ctx.fillStyle = rgba(theme.fg, 1);
+      ctx.font = '600 19px "Bricolage Grotesque", "Instrument Sans", system-ui, sans-serif';
+      ctx.fillText(overlayMsg, W / 2, H / 2 - 4);
+      ctx.fillStyle = rgba(theme.muted, 1);
+      ctx.font = '400 12px "Instrument Sans", system-ui, sans-serif';
+      ctx.fillText('Arrow keys move the paddle', W / 2, H / 2 + 20);
     }
 
     function draw(){
+      ctx.clearRect(0, 0, W, H);
       drawBackground();
       drawBricks();
+      drawTrail();
       drawPaddle();
       drawBall();
-      drawOverlay();   // ← NEW: draw overlay on top every frame
+      drawOverlay();
     }
 
-
-    // --- Main loop ---
-    function loop(){
-      step();
+    // --- Loop: runs while there is something to animate, then sleeps ---
+    function frame(ts){
+      rafId = 0;
+      const dt = lastTs ? clamp((ts - lastTs) / FRAME, 0, MAX_DT) : 1;
+      lastTs = ts;
+      step(dt);
       draw();
-      requestAnimationFrame(loop);
+      if (running || keyLeft || keyRight) startLoop();
+      else lastTs = 0;
     }
-    loop();
-
-    // --- Responsive square (no auto-reset on resize) ---
-    function fitCanvas(){
-    const MIN_WIN_W = 300;      // minimum outer window width
-    const MIN_WIN_H = 450;      // minimum outer window height
-    const PAD_X = 24;           // left/right padding around canvas
-    const PAD_Y = 120;          // header + HUD + margins above/below canvas
-    const MIN_CANVAS = 300;     // smallest canvas side
-    const MAX_CANVAS = 450;     // largest canvas side
-
-    // If this was opened via window.open, many browsers let us resize
-    try {
-      if (window.outerWidth && window.outerHeight &&
-          (window.outerWidth < MIN_WIN_W || window.outerHeight < MIN_WIN_H)) {
-        window.resizeTo(
-          Math.max(window.outerWidth, MIN_WIN_W),
-          Math.max(window.outerHeight, MIN_WIN_H)
-        );
+    function startLoop(){
+      if (rafId || document.hidden) return;
+      rafId = requestAnimationFrame(frame);
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden){
+        if (rafId){ cancelAnimationFrame(rafId); rafId = 0; }
+        lastTs = 0;
+      } else if (running){
+        startLoop();
       }
-    } catch (e) {
-      // ignore—some browsers disallow programmatic resizing
-    }
+    });
 
-    // Compute space we actually have right now (never assume resizeTo worked)
-    const availW = Math.max(0, window.innerWidth  - PAD_X);
-    const availH = Math.max(0, window.innerHeight - PAD_Y);
-    const side   = Math.min(availW, availH);
-
-    // Final canvas size clamped to your desired range
-    const size = Math.max(MIN_CANVAS, Math.min(MAX_CANVAS, Math.floor(side)));
-
-    canvas.width = size;
-    canvas.height = size;
-
-    if (!firstLayoutDone || (!running && !gameOver)) {
-      createBricks();
-      applyDefaults();
-    }
-
-    draw();
-    firstLayoutDone = true;
-  }
-
-
-    window.addEventListener('resize', fitCanvas);
+    // --- Boot ---
     fitCanvas();
+    resetGame();
+    updateHUD();
   })();
   </script>
 </body>

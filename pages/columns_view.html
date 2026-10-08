@@ -1,122 +1,190 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Column Information - Spectral Viewer</title>
+  <title>Column information — Spectra Viewer</title>
   <link rel="icon" href="../assets/img/favicon.png" />
+  <script>
+    /* Match the theme chosen on the main site before first paint. */
+    try { var t = localStorage.getItem('theme'); if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap">
   <style>
-    :root {
-      --bg: #faf9f7;
-      --fg: #fff;
-      --text: #0f172a;
-      --muted: #64748b;
-      --border: #cbd5e1;
-      --accent: #2bb673;
+    /* Same tokens and theme mechanism as the viewer it opens from. */
+    :root{
+      --font-display: "Bricolage Grotesque", "Instrument Sans", system-ui, sans-serif;
+      --font-body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color-scheme: dark;
+      --bg: #0a1118;
+      --fg: #e9eef2;
+      --fg-soft: #c3ced6;
+      --muted: #8fa0ad;
+      --accent: #3cf5d0;
+      --accent-rgb: 60,245,208;
+      --accent-ink: #032b22;
+      --panel: #101a24;
+      --panel-solid: #111c26;
+      --panel-soft: #16222e;
+      --border: rgba(255,255,255,.09);
+      --border-strong: rgba(255,255,255,.18);
     }
-    * {
-      box-sizing: border-box;
+    @media (prefers-color-scheme: light){
+      :root:not([data-theme="dark"]){
+        color-scheme: light;
+        --bg: #f2f5f7;
+        --fg: #0f1a22;
+        --fg-soft: #2b3a46;
+        --muted: #5d6f7c;
+        --accent: #0a8f74;
+        --accent-rgb: 10,143,116;
+        --accent-ink: #ffffff;
+        --panel: #ffffff;
+        --panel-solid: #ffffff;
+        --panel-soft: #eef2f5;
+        --border: rgba(15,26,34,.12);
+        --border-strong: rgba(15,26,34,.24);
+      }
     }
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
+    :root[data-theme="light"]{
+      color-scheme: light;
+      --bg: #f2f5f7;
+      --fg: #0f1a22;
+      --fg-soft: #2b3a46;
+      --muted: #5d6f7c;
+      --accent: #0a8f74;
+      --accent-rgb: 10,143,116;
+      --accent-ink: #ffffff;
+      --panel: #ffffff;
+      --panel-solid: #ffffff;
+      --panel-soft: #eef2f5;
+      --border: rgba(15,26,34,.12);
+      --border-strong: rgba(15,26,34,.24);
+    }
+
+    *{ box-sizing: border-box; }
+    body{
+      font-family: var(--font-body);
       background: var(--bg);
-      color: var(--text);
+      color: var(--fg);
       margin: 0;
-      padding: 20px;
+      padding: 24px 20px 40px;
       line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
     }
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    h1 {
-      font-size: 28px;
+    .container{ max-width: 1200px; margin: 0 auto; }
+
+    .page-head{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
       margin-bottom: 24px;
-      color: var(--text);
+    }
+    h1, h2{
+      font-family: var(--font-display);
+      text-wrap: balance;
+      font-size: clamp(22px, 3vw, 28px);
       font-weight: 600;
+      letter-spacing: -.024em;
+      line-height: 1.05;
+      margin: 0;
+      color: var(--fg);
     }
-    .filter-box {
-      margin-bottom: 24px;
+
+    button{
+      font: 600 13px var(--font-body);
+      padding: 9px 16px;
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      background: var(--accent);
+      color: var(--accent-ink);
+      cursor: pointer;
+      transition: filter .2s ease;
     }
-    input {
-      padding: 10px 16px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: 14px;
+    button:hover{ filter: brightness(1.08); }
+    button:focus-visible, input:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    .filter-box{ margin-bottom: 24px; }
+    input{
+      font: 400 14px var(--font-body);
+      padding: 10px 14px;
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
       width: 100%;
       max-width: 400px;
-      background: var(--fg);
-      transition: border-color 0.2s;
+      background: var(--panel-solid);
+      color: var(--fg);
+      transition: border-color .2s ease;
     }
-    input:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-    .spectrum-card {
-      background: var(--fg);
+    input::placeholder{ color: var(--muted); }
+    input:focus{ border-color: var(--accent); }
+
+    .spectrum-card{
+      background: var(--panel);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      transition: box-shadow 0.2s;
+      border-radius: 14px;
+      padding: 22px 24px;
+      margin-bottom: 18px;
     }
-    .spectrum-card:hover {
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    .spectrum-name {
-      font-size: 20px;
+    .spectrum-name{
+      font-family: var(--font-display);
+      font-size: 18px;
+      margin: 0 0 10px;
       font-weight: 600;
-      margin-bottom: 12px;
-      color: var(--text);
+      letter-spacing: -.02em;
+      margin-bottom: 10px;
+      color: var(--fg);
     }
-    .column-count {
-      font-size: 14px;
+    .column-count{
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .09em;
       color: var(--muted);
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
-    .columns {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
+    .columns{ display: flex; flex-wrap: wrap; gap: 8px; }
+    .column-tag{
+      background: var(--panel-soft);
+      border: 1px solid var(--border);
+      padding: 5px 11px;
+      border-radius: 7px;
+      font-size: 12.5px;
+      color: var(--fg-soft);
+      font-family: var(--font-mono);
     }
-    .column-tag {
-      background: #e8ddd6;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 13px;
-      color: var(--text);
-      font-family: 'Monaco', 'Courier New', monospace;
-    }
-    .no-data {
+    .no-data{
       text-align: center;
       padding: 60px 20px;
       color: var(--muted);
-      font-size: 16px;
+      font-size: 15px;
     }
-    .info-box {
-      background: #e0f2fe;
-      border: 1px solid #7dd3fc;
-      border-radius: 8px;
-      padding: 16px;
+    .info-box{
+      background: rgba(var(--accent-rgb), .08);
+      border: 1px solid rgba(var(--accent-rgb), .35);
+      border-radius: 10px;
+      padding: 14px 16px;
       margin-bottom: 24px;
-      color: #0c4a6e;
+      font-size: 13.5px;
+      color: var(--fg-soft);
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
-      <h1 style="margin: 0;">Available Columns by Spectrum</h1>
-      <button onclick="refreshData()" style="padding: 10px 20px; border: 1px solid var(--border); border-radius: 8px; background: var(--accent); color: white; cursor: pointer; font-size: 14px; font-weight: 600; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
-        ↻ Refresh
-      </button>
+    <div class="page-head">
+      <h1>Available columns by spectrum</h1>
+      <button type="button" onclick="refreshData()">↻ Refresh</button>
     </div>
-    <div class="info-box" id="infoBox">
-      Loading column information from parent window...
+    <div class="info-box" id="infoBox" role="status" aria-live="polite">
+      Loading column information from the viewer…
     </div>
     <div class="filter-box">
-      <input type="text" id="filterInput" placeholder="Filter by spectrum name..." onkeyup="filterSpectra()">
+      <input type="text" id="filterInput" placeholder="Filter by spectrum name…" autocomplete="off" spellcheck="false" aria-label="Filter by spectrum name" oninput="filterSpectra()">
     </div>
     <div id="spectraList" style="display: none;">
       <!-- Content will be populated by JavaScript -->
@@ -129,7 +197,6 @@
     // Listen for data from parent window
     window.addEventListener('message', (event) => {
       if (event.data && event.data.type === 'spectraData') {
-        console.log('Received spectra data:', event.data.data);
         spectraData = event.data.data;
         
         // Hide loading message
@@ -144,7 +211,6 @@
     // Request data from parent on page load/refresh
     window.addEventListener('DOMContentLoaded', () => {
       if (window.opener) {
-        console.log('Requesting initial data from parent...');
         window.opener.postMessage({ type: 'requestSpectraData' }, '*');
       } else {
         // No parent window, show error
@@ -162,13 +228,12 @@
     
     // Function to refresh data from parent
     function refreshData() {
-      console.log('Requesting fresh data from parent...');
       
       // Show loading message
       const infoBox = document.getElementById('infoBox');
       const listEl = document.getElementById('spectraList');
       if (infoBox) {
-        infoBox.textContent = 'Refreshing data...';
+        infoBox.textContent = 'Refreshing data…';
         infoBox.style.display = 'block';
       }
       if (listEl) {
@@ -186,7 +251,6 @@
     }
     
     function displaySpectra() {
-      console.log('displaySpectra called with data:', spectraData);
       const listEl = document.getElementById('spectraList');
       const infoBox = document.getElementById('infoBox');
       
@@ -208,7 +272,6 @@
       }
       
       const names = Object.keys(spectraData);
-      console.log('Found spectrum names:', names);
       
       if (names.length === 0) {
         listEl.innerHTML = '<div class="no-data">No column information available. Please load spectra in the main viewer.</div>';
@@ -220,7 +283,6 @@
       
       names.forEach(name => {
         const spectrum = spectraData[name];
-        console.log(`Processing spectrum: ${name}`, spectrum);
         
         if (!spectrum) {
           console.warn(`Spectrum ${name} is null or undefined`);
@@ -235,7 +297,7 @@
         validCount++;
         html += `
           <div class="spectrum-card" data-name="${name.toLowerCase()}">
-            <div class="spectrum-name">${escapeHtml(name)}</div>
+            <h2 class="spectrum-name">${escapeHtml(name)}</h2>
             <div class="column-count">${spectrum.columns.length} column${spectrum.columns.length !== 1 ? 's' : ''}</div>
             <div class="columns">`;
         
@@ -252,7 +314,6 @@
         listEl.innerHTML = '<div class="no-data">No column information available. Please load spectra in the main viewer.</div>';
       } else {
         listEl.innerHTML = html;
-        console.log(`Displayed ${validCount} spectra`);
       }
     }
     

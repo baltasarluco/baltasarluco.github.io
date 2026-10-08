@@ -5,7 +5,28 @@ window.addEventListener('DOMContentLoaded', function(){
   }
 
   const UI_REVISION = 'spectra-viewer-uirevision-1';
-  const palette = ['#0ea5e9','#6366f1','#f97316','#10b981','#ef4444','#06b6d4','#facc15','#ec4899','#22c55e','#f59e0b'];
+  // Chart theme. Every colour the plot draws with is read from the stylesheet,
+  // so the figure follows the site's dark/light choice instead of staying white.
+  // The trace palette is the validated eight-hue categorical set, stepped once
+  // for each surface; slots are assigned in order and never generated.
+  const TRACE_PALETTE = {
+    dark:  ['#3987e5','#d95926','#199e70','#c98500','#d55181','#008300','#9085e9','#e66767'],
+    light: ['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4','#008300','#4a3aa7','#e34948']
+  };
+  const mqLight = window.matchMedia('(prefers-color-scheme: light)');
+  function themeMode(){
+    const t = document.documentElement.dataset.theme;
+    if (t === 'dark' || t === 'light') return t;
+    return mqLight.matches ? 'light' : 'dark';
+  }
+  function token(name, fallback){
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v || fallback;
+  }
+  let palette = TRACE_PALETTE[themeMode()];
+  // Slot per spectrum, kept only while its colour is still the automatic one;
+  // a colour the user picks is theirs and is never re-stepped.
+  const autoSlot = {};
 
   // Modebar icons
   const undoIcon = { width:512, height:512, path:'M320 128 L160 256 L320 384 L320 296 L448 296 L448 216 L320 216 Z' };
@@ -166,8 +187,10 @@ const config = {
 
     const rm = document.createElement('button');
     rm.className = 'remove-line';
+    rm.type = 'button';
     rm.textContent = '×';
     rm.title = 'Remove line';
+    rm.setAttribute('aria-label', `Remove the ${wl.toFixed(4)} Å line`);
     rm.addEventListener('click', () => {
       const idx = selectedLines.indexOf(wl);
       if(idx !== -1) { selectedLines.splice(idx, 1); renderSelectedLines(); updateLineMarkers();
@@ -340,6 +363,15 @@ function onPlotClick(evt){
       addSelectedLine(x);
     }
   }}
+
+  // One sentence for the whole library, so the status never contradicts the list.
+  function plural(n){ return n + (n === 1 ? ' spectrum' : ' spectra'); }
+  function describeLibrary(justLoaded){
+    const total = Object.keys(spectra).length;
+    if(!total) return 'No spectra loaded';
+    if(justLoaded > 0 && justLoaded < total) return `${plural(justLoaded)} added — ${plural(total)} loaded`;
+    return `${plural(total)} loaded`;
+  }
 
   function setStatus(message, loading){
     elements.status.textContent = message;
@@ -545,6 +577,13 @@ function checkCardsForOverflow(){
   }
 }
 
+  function assignAutoColor(name){
+    if(state.colors[name]) return;
+    const slot = Object.keys(state.colors).length;
+    autoSlot[name] = slot;
+    state.colors[name] = palette[slot % palette.length];
+  }
+
   function sanitizeName(raw){
     // Remove common file extensions and path prefixes
     const base = raw
@@ -674,6 +713,17 @@ function checkCardsForOverflow(){
     }
 
     if(rowCount === 0) throw new Error('No data rows found in ' + context);
+
+    // A table needs at least one column of real numbers. Without this check a
+    // prose .txt parses into columns of NaN and loads as a silent, empty spectrum.
+    const numericColumns = header.filter(name => {
+      let finite = 0;
+      for(const v of columnData[name]){ if(Number.isFinite(v) && ++finite >= 2) return true; }
+      return false;
+    });
+    if(!numericColumns.length){
+      throw new Error('no numeric columns found in ' + context + '. Expected a table of numbers separated by a comma, semicolon, colon, tab or spaces.');
+    }
 
     const result = { columns: header.slice() };
     header.forEach(colName => {
@@ -972,10 +1022,7 @@ function checkCardsForOverflow(){
     if(!length) return 0;
     const name = sanitizeName(filename);
     spectra[name] = data;
-    if(!state.colors[name]){
-      const idx = Object.keys(state.colors).length;
-      state.colors[name] = palette[idx % palette.length];
-    }
+    assignAutoColor(name);
     state.selected.add(name);
     return 1;
   }
@@ -995,10 +1042,7 @@ function checkCardsForOverflow(){
       const name = tables.length > 1 ? `${baseName}_hdu${hduIndex}` : baseName;
 
       spectra[name] = data;
-      if(!state.colors[name]){
-        const idx = Object.keys(state.colors).length;
-        state.colors[name] = palette[idx % palette.length];
-      }
+      assignAutoColor(name);
       state.selected.add(name);
       count++;
     }
@@ -1012,7 +1056,7 @@ function checkCardsForOverflow(){
     let loaded = 0;
     for(const file of files){
       try{
-        setStatus('Loading ' + file.name + '...', true);
+        setStatus('Loading ' + file.name + '…', true);
         await new Promise(r => requestAnimationFrame(r));
         const lower = file.name.toLowerCase();
         if(lower.endsWith('.zip')) loaded += await loadZip(file);
@@ -1033,7 +1077,7 @@ function checkCardsForOverflow(){
     lockSpectraCardHeightAtStartup();  // <-- NEW: freeze initial height
     lockExpandableCardsToSpectraHeight();  // <-- Match other cards to Spectra height
     refreshPlot();
-    setStatus(loaded ? ('Loaded ' + loaded + ' spectra.') : 'No spectra loaded.', false);
+    setStatus(describeLibrary(loaded), false);
     updateUndoRedoButtons();
   }
 
@@ -1059,8 +1103,7 @@ function checkCardsForOverflow(){
     buildSpectrumSelector();
     buildActivePlotTypesList();
     refreshPlot();
-    const count = names.length;
-    setStatus(count ? (`${count} spectra loaded.`) : 'No spectra loaded.', false);
+    setStatus(describeLibrary(0), false);
   }
 
   function buildSpectrumSelector(){
@@ -1159,7 +1202,7 @@ function checkCardsForOverflow(){
       const colorBtn = document.createElement('div'); 
       colorBtn.className = 'color-picker-btn';
 
-      const deleteBtn = document.createElement('button'); deleteBtn.className='delete-spec'; deleteBtn.textContent='×'; deleteBtn.title='Delete spectrum';
+      const deleteBtn = document.createElement('button'); deleteBtn.className='delete-spec'; deleteBtn.type='button'; deleteBtn.textContent='×'; deleteBtn.title='Delete spectrum'; deleteBtn.setAttribute('aria-label', 'Delete spectrum ' + name);
       deleteBtn.addEventListener('click', () => { deleteSpectrum(name); });
 
       item.appendChild(label); 
@@ -1187,12 +1230,20 @@ function checkCardsForOverflow(){
         }
       });
 
+      // Pickr only paints its button after a colour is *saved*, so the swatches
+      // sat black and stopped matching the plot. Seed the button on init.
+      pickr.on('init', (instance) => {
+        const root = instance.getRoot && instance.getRoot();
+        const button = root && root.button;
+        if (button) button.style.setProperty('--pcr-color', state.colors[name] || currentColor);
+      });
+
       pickr.on('save', (color) => {
         if (color) {
           const rgbaArray = color.toRGBA();
           const colorString = `rgba(${Math.round(rgbaArray[0])}, ${Math.round(rgbaArray[1])}, ${Math.round(rgbaArray[2])}, ${rgbaArray[3]})`;
-          console.log(`Pickr save for ${name}: array=`, rgbaArray, `string="${colorString}"`);
           state.colors[name] = colorString;
+          delete autoSlot[name];
           refreshPlot();
         }
         pickr.hide();
@@ -1222,7 +1273,7 @@ function checkCardsForOverflow(){
     if (state.activePlotTypes.length === 0) {
       const empty = document.createElement('div');
       empty.textContent = 'No plots selected';
-      empty.style.cssText = 'color:#888;font-style:italic;padding:0px 0;';
+      empty.className = 'plot-empty';
       elements.activePlotTypes.appendChild(empty);
       requestAnimationFrame(() => requestAnimationFrame(() => checkCardsForOverflow()));
       return;
@@ -1230,7 +1281,7 @@ function checkCardsForOverflow(){
 
     state.activePlotTypes.forEach(config => {
       const item = document.createElement('div');
-      item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 10px;margin:4px 0;background:#e8ddd6;border-radius:4px;font-size:12px;';
+      item.className = 'plot-item';
 
       // Checkbox for visibility
       const checkbox = document.createElement('input');
@@ -1243,14 +1294,14 @@ function checkCardsForOverflow(){
       });
 
       const labelContainer = document.createElement('div');
-      labelContainer.style.cssText = 'flex:1;min-width:0;';
+      labelContainer.className = 'plot-item__label';
 
       const mainLabel = document.createElement('div');
-      mainLabel.style.cssText = 'font-weight:500;font-size:12px;';
+      mainLabel.className = 'plot-item__name';
       mainLabel.textContent = config.label || `${config.spectrumName}: ${config.yCol} vs ${config.xCol}`;
 
       const details = document.createElement('div');
-      details.style.cssText = 'font-size:10px;color:#666;margin-top:2px;';
+      details.className = 'plot-item__meta';
       const typeLabels = { 'line-solid': 'solid', 'line-dashed': 'dashed', 'error-fill': 'error band' };
       let detailText = typeLabels[config.type] || config.type;
       if (config.type === 'error-fill' && config.errorCol) {
@@ -1263,7 +1314,10 @@ function checkCardsForOverflow(){
 
       const removeBtn = document.createElement('button');
       removeBtn.textContent = '×';
-      removeBtn.style.cssText = 'background:none;border:none;font-size:20px;cursor:pointer;color:#666;padding:0;width:20px;height:20px;line-height:1;flex-shrink:0;';
+      removeBtn.className = 'plot-item__remove';
+      removeBtn.type = 'button';
+      removeBtn.title = 'Remove this plot';
+      removeBtn.setAttribute('aria-label', 'Remove this plot');
       removeBtn.onclick = () => removePlotType(config.id);
 
       item.appendChild(checkbox);
@@ -1300,6 +1354,7 @@ function checkCardsForOverflow(){
     }
   });
 
+  let plotTypeSeq = 0;
   function addPlotType() {
     const spectrumName = elements.spectrumSelect.value;
     const plotType = elements.plotTypeSelect.value;
@@ -1332,8 +1387,6 @@ function checkCardsForOverflow(){
     }
 
     const spec = spectra[spectrumName];
-    console.log(`Checking spectrum "${spectrumName}" for columns: X="${xCol}", Y="${yCol}", Error="${errorCol}"`);
-    console.log(`Spectrum columns:`, spec.columns);
 
     // Check if the selected spectrum has the required columns
     const hasX = spec.columns && spec.columns.includes(xCol);
@@ -1350,11 +1403,9 @@ function checkCardsForOverflow(){
       return;
     }
 
-    console.log(`✓ Found all required columns in "${spectrumName}"`);
-
     // Create plot configuration
     const config = {
-      id: Date.now(), // Unique identifier
+      id: ++plotTypeSeq, // Unique identifier (a timestamp collides on fast adds)
       spectrumName: spectrumName, // Store which spectrum this plot is for
       type: plotType,
       xCol: xCol,
@@ -1623,25 +1674,33 @@ function checkCardsForOverflow(){
 
   function baseLayout(){
     const hoverOn = state.showHover !== false;
+    const surface = token('--panel-solid', '#ffffff');
+    const ink     = token('--fg', '#0f172a');
+    const grid    = token('--grid', 'rgba(15,26,34,.10)');
+    const axis    = token('--axis', 'rgba(15,26,34,.34)');
     return {
     uirevision: UI_REVISION,
-    paper_bgcolor:'#ffffff',
-    plot_bgcolor:'#ffffff',
-    font:{ family:'Inter, Arial, sans-serif', color:'#0f172a' },
+    paper_bgcolor: surface,
+    plot_bgcolor: surface,
+    font:{ family:'"Instrument Sans", system-ui, Arial, sans-serif', color: ink },
     margin: { l: 80, r: 25, t: 40, b: 80, pad: 4 },
 
     hovermode: hoverOn ? 'x' : false,   // <-- NEW
 
-    legend:{ orientation:'h', x:0, y:1.05 },
+    legend:{ orientation:'h', x:0, y:1.05, bgcolor:'rgba(0,0,0,0)', font:{ color: ink } },
+
+    // Plotly styles its toolbar inline, so the colours have to come from here
+    // rather than from the stylesheet.
+    modebar:{ bgcolor:'rgba(0,0,0,0)', color: token('--muted','#8fa0ad'), activecolor: token('--accent','#3cf5d0') },
 
     xaxis: {
   title: { text: state.xAxisLabel || 'Wavelength [Angstrom]' },
   tickformat: '.4f',
   hoverformat: '.4f',
   tickformatstops: [{ dtickrange:[null,null], value: '.4f' }],
-  gridcolor:'#e2e8f0',
-  linecolor:'#94a3b8',
-  tickcolor:'#94a3b8',
+  gridcolor: grid,
+  linecolor: axis,
+  tickcolor: axis,
   zeroline:false,
 
   // Hover spike styling
@@ -1649,16 +1708,16 @@ function checkCardsForOverflow(){
   spikemode: 'across',                 // vertical spike across the plot
   spikesnap: 'cursor',
   spikelen: 0,                          // 0 = full height
-  spikecolor: 'rgba(107,114,128,0.6)',  // slate-ish gray @ 0.6 alpha
+  spikecolor: token('--muted', 'rgba(107,114,128,0.6)'),
   spikethickness: 1,                    // slimmer line
   spikedash: 'dash'                     // dashed
 },
 
     yaxis: {
   title: { text: state.yAxisLabel || 'Flux [erg/s/cm²/Å]', standoff: 4 },
-  gridcolor: '#e2e8f0',
-  linecolor: '#94a3b8',
-  tickcolor: '#94a3b8',
+  gridcolor: grid,
+  linecolor: axis,
+  tickcolor: axis,
   zeroline: false,
 
   // show exponent only once (top tick)
@@ -1707,6 +1766,10 @@ function checkCardsForOverflow(){
     if(!confirm('Clear all spectra? This will remove all loaded data and plots.')) return;
     names=[]; Object.keys(spectra).forEach(k=>delete spectra[k]);
     state.selected.clear(); state.colors={};
+    // The plot list is built on spectra that no longer exist — drop it too.
+    state.activePlotTypes = [];
+    Object.keys(autoSlot).forEach(k=>delete autoSlot[k]);
+    buildActivePlotTypesList();
     // Destroy all Pickr instances
     Object.values(colorPickers).forEach(pickr => pickr.destroyAndRemove());
     Object.keys(colorPickers).forEach(key => delete colorPickers[key]);
@@ -1716,7 +1779,7 @@ function checkCardsForOverflow(){
     updateLineMarkers();   // <--- add this
     lockSpectraCardHeightAtStartup();  // <-- NEW: freeze initial height
     lockExpandableCardsToSpectraHeight();  // <-- Match other cards to Spectra height
-refreshPlot(); setStatus('Cleared all spectra.', false); updateUndoRedoButtons();
+refreshPlot(); setStatus('No spectra loaded', false); updateUndoRedoButtons();
   }
 
   // Drag & drop
@@ -1793,6 +1856,7 @@ lockExpandableCardsToSpectraHeight();  // <-- Match other cards to Spectra heigh
             plotCard.style.removeProperty('--expand-height');
           });
 
+          btnToggleCustomPlot.setAttribute('aria-expanded', 'true');
           if (toggleCustomPlotIcon) {
             toggleCustomPlotIcon.textContent = '▲';
           }
@@ -1819,6 +1883,7 @@ lockExpandableCardsToSpectraHeight();  // <-- Match other cards to Spectra heigh
             plotCard.style.setProperty('--card-fixed-height', lockedHeight + 'px');
           }
 
+          btnToggleCustomPlot.setAttribute('aria-expanded', 'false');
           if (toggleCustomPlotIcon) {
             toggleCustomPlotIcon.textContent = '▼';
           }
@@ -1836,6 +1901,7 @@ lockExpandableCardsToSpectraHeight();  // <-- Match other cards to Spectra heigh
         if (elements.activePlotTypes) {
           elements.activePlotTypes.style.display = isHidden ? 'none' : '';
         }
+        btnToggleCustomPlot.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
         if (toggleCustomPlotIcon) {
           toggleCustomPlotIcon.textContent = isHidden ? '▲' : '▼';
         }
@@ -1925,7 +1991,7 @@ function updateLineMarkers(){
       const layout=baseLayout();
       layout.shapes = buildLineShapes();
 
-      layout.annotations=[{text:names.length?'Select plots to visualise':'Load spectra and add plots to begin',x:0.5,y:0.5,xref:'paper',yref:'paper',showarrow:false,font:{color:'#94a3b8',size:30}}];
+      layout.annotations=[{text:names.length?'Select plots to visualise':'Load spectra and add plots to begin',x:0.5,y:0.5,xref:'paper',yref:'paper',showarrow:false,font:{color:token('--muted','#94a3b8'),size:26}}];
       ignoreRelayout=true;
       Plotly.react(elements.graph, [], layout, config).then(() => {
         ignoreRelayout=false; updateUndoRedoButtons();
@@ -1953,29 +2019,18 @@ function updateLineMarkers(){
 
       // Skip if spectrum no longer exists
       if (!spec) {
-        console.log(`  ✗ Spectrum "${name}" not found, skipping config`);
         return;
       }
 
       const color = state.colors[name] || palette[0];
-      console.log(`Using color for ${name}:`, color, `from state.colors[${name}]=`, state.colors[name]);
 
-      console.log(`Plotting "${name}" with config:`, config);
-      console.log(`  Spectrum has columns:`, spec.columns);
-      console.log(`  Looking for X column:`, config.xCol);
-      console.log(`  Looking for Y column:`, config.yCol);
-      console.log(`  Available keys in spec:`, Object.keys(spec).filter(k => k !== 'columns'));
 
         // Get the column data
         const xData = spec[config.xCol];
         const yData = spec[config.yCol];
-        console.log(`  X data (${config.xCol}):`, !!xData, `length:`, xData?.length, `first values:`, xData ? Array.from(xData.slice(0, 3)) : 'none');
-        console.log(`  Y data (${config.yCol}):`, !!yData, `length:`, yData?.length, `first values:`, yData ? Array.from(yData.slice(0, 3)) : 'none');
         if (!xData || !yData) {
-          console.log(`  ✗ Skipping "${name}" - column data not found`);
           return;
         }
-        console.log(`  ✓ Will plot "${name}"`);
 
         // Build sampled data for this plot
         const s = buildSampleCustom(spec, config.xCol, config.yCol, config.errorCol);
@@ -2011,7 +2066,6 @@ function updateLineMarkers(){
             // Extract RGB from color and apply fixed alpha of 0.2
             const colorParsed = parseColorWithAlpha(color);
             const fixedAlphaColor = `rgba(${colorParsed.r}, ${colorParsed.g}, ${colorParsed.b}, 0.2)`;
-            console.log(`Error fill for ${name}: input color="${color}", parsed=`, colorParsed, `final="${fixedAlphaColor}"`);
 
             // Add only the error band fill (no center line)
             traces.push({
@@ -2050,7 +2104,7 @@ function updateLineMarkers(){
             hoverlabel: {
               bgcolor: hexWithAlpha(color, 0.15),
               bordercolor: color,
-              font: { color: '#0f172a' }
+              font: { color: token('--fg', '#0f172a') }
             }
           });
           collectFinite(s.x, xValues);
@@ -2071,7 +2125,7 @@ function updateLineMarkers(){
             hoverlabel: {
               bgcolor: hexWithAlpha(color, 0.15),
               bordercolor: color,
-              font: { color: '#0f172a' }
+              font: { color: token('--fg', '#0f172a') }
             }
           });
           collectFinite(s.x, xValues);
@@ -2130,10 +2184,8 @@ function updateLineMarkers(){
       ignoreRelayout=false; 
       updateUndoRedoButtons();
 
-      // Re-render MathJax for axis labels
-      if (window.MathJax && window.MathJax.Hub) {
-        window.MathJax.Hub.Queue(['Typeset', window.MathJax.Hub, elements.graph]);
-      }
+      // Axis labels: Plotly typesets $...$ titles through MathJax 3 itself on
+      // every react, so there is nothing to re-queue here.
 
       // Ensure handlers are bound once
       if (!handlersBound && typeof elements.graph.on === 'function') {
@@ -2158,7 +2210,7 @@ function setPickCursor(active){
     });
     bootstrapping = false;
 
-    setStatus(active.length + ' spectra selected', false);
+    setStatus(plural(active.length) + ' selected', false);
   }
 
   // Initial UI hookups + first paint
@@ -2182,6 +2234,20 @@ lockExpandableCardsToSpectraHeight();  // <-- Match other cards to Spectra heigh
   lockExpandableCardsToSpectraHeight();  // <-- Match other cards to Spectra height
   buildActivePlotTypesList();  // Initialize plot types list
   lockPlotCardToInitialHeight();  // Lock Plot card to its empty state
+
+  // Follow the site's theme: re-step the automatic trace colours for the new
+  // surface and repaint the figure. Colours the user picked are left alone.
+  function applyChartTheme(){
+    palette = TRACE_PALETTE[themeMode()];
+    Object.entries(autoSlot).forEach(([name, slot]) => {
+      state.colors[name] = palette[slot % palette.length];
+    });
+    buildList();
+    refreshPlot();
+  }
+  new MutationObserver(applyChartTheme)
+    .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  mqLight.addEventListener('change', applyChartTheme);
 
   refreshPlot();
   updateUndoRedoButtons();
